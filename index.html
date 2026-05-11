@@ -8,914 +8,724 @@
   <meta name="apple-mobile-web-app-title" content="Bedrock" />
   <meta name="theme-color" content="#09090b" />
   <title>Bedrock</title>
-
-  <!-- Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React 18 -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Babel standalone (JSX in browser) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-          colors: {
-            surface:  '#111113',
-            card:     '#18181b',
-            border:   '#27272a',
-          }
-        }
-      }
-    };
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } };
   </script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; }
     body {
-      background: #09090b;
-      color: #fafafa;
+      background: #09090b; color: #fafafa;
       font-family: 'Inter', -apple-system, system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
       overscroll-behavior: none;
     }
-
-    /* Thin scrollbar */
-    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
 
-    /* Animations */
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-    @keyframes modalUp {
-      from { opacity: 0; transform: translateY(32px) scale(0.98); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes fadeSlideUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn      { from { opacity:0; } to { opacity:1; } }
+    @keyframes modalUp     { from { opacity:0; transform:translateY(32px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @keyframes spin        { to { transform:rotate(360deg); } }
 
-    .anim-item    { animation: fadeSlideUp 0.18s ease-out both; }
-    .anim-fade    { animation: fadeIn 0.15s ease-out both; }
-    .anim-modal   { animation: modalUp 0.22s cubic-bezier(0.34, 1.2, 0.64, 1) both; }
-    .spinner      { animation: spin 0.8s linear infinite; }
+    .anim-item  { animation: fadeSlideUp 0.18s ease-out both; }
+    .anim-fade  { animation: fadeIn 0.15s ease-out both; }
+    .anim-modal { animation: modalUp 0.22s cubic-bezier(0.34,1.2,0.64,1) both; }
+    .spinner    { animation: spin 0.8s linear infinite; }
 
-    /* Task card */
-    .task-card { transition: background 0.1s ease; }
+    .task-card  { transition: background 0.1s ease; }
     .task-card:active { background: #1c1c1f; }
+    .tab-btn    { transition: color 0.12s ease, background 0.12s ease; }
 
-    /* Tab button */
-    .tab-btn { transition: color 0.12s ease, background 0.12s ease; }
-
-    /* Check circle */
     .check-circle {
-      width: 20px; height: 20px;
-      border: 1.5px solid #3f3f46;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: border-color 0.15s, background 0.15s;
-      cursor: pointer;
+      width:20px; height:20px; border:1.5px solid #3f3f46; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      transition:border-color 0.15s, background 0.15s; cursor:pointer;
     }
-    .check-circle:hover { border-color: #6366f1; background: rgba(99,102,241,0.12); }
+    .check-circle:hover { border-color:#6366f1; background:rgba(99,102,241,0.12); }
 
-    /* Drag */
-    .drag-over-top { box-shadow: inset 0 2px 0 #6366f1; }
+    /* Mobile week slider */
+    .week-slider-wrap { overflow:hidden; flex:1; }
+    .week-slider {
+      display:flex; height:100%;
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform;
+    }
+    .week-slide { min-width:100%; width:100%; overflow-y:auto; }
+
+    /* Desktop kanban */
+    .kanban-wrap { display:flex; gap:12px; overflow-x:auto; padding:12px 16px 80px; height:100%; align-items:flex-start; }
+    .kanban-col  { min-width:240px; width:240px; flex-shrink:0; border-radius:12px; background:#111113; border:1px solid #27272a; overflow:hidden; }
+    .kanban-col.drag-over-col { border-color:#6366f1; box-shadow:0 0 0 1px #6366f1; }
 
     /* Safe area */
-    .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); }
-    .pt-safe  { padding-top: env(safe-area-inset-top, 0px); }
+    .pb-safe { padding-bottom:max(env(safe-area-inset-bottom,0px),8px); }
+    .pt-safe  { padding-top:env(safe-area-inset-top,0px); }
 
-    /* iOS date input */
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: invert(0.5);
-      cursor: pointer;
-    }
+    /* Date input */
+    input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(0.5); cursor:pointer; }
 
-    /* Select arrow */
-    select { background-image: none; }
+    /* Today highlight on day pill */
+    .today-pill { background:#6366f1 !important; color:#fff !important; }
 
-    /* Glow on active tab icon */
-    .tab-active-dot {
-      width: 4px; height: 4px;
-      background: #6366f1;
-      border-radius: 50%;
-      margin: 0 auto;
-    }
+    /* Beyond infinity symbol */
+    .beyond-glyph { font-size:14px; line-height:1; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
+const { createClient } = supabase;
+const db = createClient(
+  'https://xoklkzvgilrpawbilxnc.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhva2xrenZnaWxycGF3YmlseG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDMyMDMsImV4cCI6MjA4ODg3OTIwM30.MoStn-1gnyT2gdWqoA6F0h-xC5swROoU3dfk3HC444A'
+);
 
-  <script type="text/babel">
-    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+// ── Source config ───────────────────────────────────────────
+const SRC = {
+  personal:   { label:'Personal',   pill:'bg-blue-500/15 text-blue-400',       dot:'bg-blue-500'     },
+  earlehouse: { label:'Earlehouse', pill:'bg-violet-500/15 text-violet-400',   dot:'bg-violet-500'   },
+  rise8:      { label:'Rise8',      pill:'bg-emerald-500/15 text-emerald-400', dot:'bg-emerald-500'  },
+  imessage:   { label:'iMessage',   pill:'bg-green-500/15 text-green-400',     dot:'bg-green-500'    },
+  manual:     { label:'Manual',     pill:'bg-zinc-700/60 text-zinc-400',       dot:'bg-zinc-500'     },
+};
+const SRC_OPTIONS = [
+  { value:'',           label:'— none —'   },
+  { value:'personal',   label:'Personal'   },
+  { value:'earlehouse', label:'Earlehouse' },
+  { value:'rise8',      label:'Rise8'      },
+  { value:'imessage',   label:'iMessage'   },
+  { value:'manual',     label:'Manual'     },
+];
 
-    // ── Supabase ─────────────────────────────────────────────
-    const { createClient } = supabase;
-    const db = createClient(
-      'https://xoklkzvgilrpawbilxnc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhva2xrenZnaWxycGF3YmlseG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDMyMDMsImV4cCI6MjA4ODg3OTIwM30.MoStn-1gnyT2gdWqoA6F0h-xC5swROoU3dfk3HC444A'
-    );
+const PRI = {
+  1: { dot:'bg-red-500',   label:'🔴 High'   },
+  2: { dot:'bg-amber-400', label:'🟡 Medium' },
+  3: { dot:'bg-zinc-600',  label:'⚪ Low'    },
+};
 
-    // ── Config maps ──────────────────────────────────────────
-    const SRC = {
-      personal:   { label: 'Personal',   pill: 'bg-blue-500/15 text-blue-400',      dot: 'bg-blue-500'     },
-      earlehouse: { label: 'Earlehouse', pill: 'bg-violet-500/15 text-violet-400',  dot: 'bg-violet-500'   },
-      rise8:      { label: 'Rise8',      pill: 'bg-emerald-500/15 text-emerald-400', dot: 'bg-emerald-500' },
-      imessage:   { label: 'iMessage',   pill: 'bg-green-500/15 text-green-400',    dot: 'bg-green-500'    },
-      manual:     { label: 'Manual',     pill: 'bg-zinc-700/60 text-zinc-400',       dot: 'bg-zinc-500'    },
-    };
+// ── Week helpers ────────────────────────────────────────────
+const WEEK_COLS = [
+  { id:'mon',     label:'Mon',     short:'M',  dayOffset:0 },
+  { id:'tue',     label:'Tue',     short:'T',  dayOffset:1 },
+  { id:'wed',     label:'Wed',     short:'W',  dayOffset:2 },
+  { id:'thu',     label:'Thu',     short:'Th', dayOffset:3 },
+  { id:'fri',     label:'Fri',     short:'F',  dayOffset:4 },
+  { id:'weekend', label:'Weekend', short:'Wk', dayOffset:5 },
+  { id:'beyond',  label:'Beyond',  short:'∞',  dayOffset:null },
+];
 
-    const SRC_OPTIONS = [
-      { value: '',           label: '— none —'   },
-      { value: 'personal',   label: 'Personal'   },
-      { value: 'earlehouse', label: 'Earlehouse' },
-      { value: 'rise8',      label: 'Rise8'      },
-      { value: 'imessage',   label: 'iMessage'   },
-      { value: 'manual',     label: 'Manual'     },
-    ];
+function getWeekDays() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  return Array.from({length:7}, (_,i) => { const d=new Date(monday); d.setDate(monday.getDate()+i); return d; });
+}
 
-    const PRI = {
-      1: { dot: 'bg-red-500',    label: '🔴 High'   },
-      2: { dot: 'bg-amber-400',  label: '🟡 Medium' },
-      3: { dot: 'bg-zinc-600',   label: '⚪ Low'    },
-    };
+function dateStr(d) { return d ? d.toISOString().split('T')[0] : null; }
 
-    // ── Date helpers ─────────────────────────────────────────
-    function fmtDue(d) {
-      if (!d) return null;
-      const dt    = new Date(d + 'T00:00:00');
-      const today = new Date();
-      const tom   = new Date(); tom.setDate(today.getDate() + 1);
-      if (dt.toDateString() === today.toDateString()) return { str: 'Today',    over: false };
-      if (dt.toDateString() === tom.toDateString())   return { str: 'Tomorrow', over: false };
-      const over = dt < today;
-      return { str: dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), over };
-    }
+function colDate(colId, weekDays) {
+  if (colId === 'beyond') return null;
+  if (colId === 'weekend') return dateStr(weekDays[5]);
+  const idx = {mon:0,tue:1,wed:2,thu:3,fri:4}[colId];
+  return idx !== undefined ? dateStr(weekDays[idx]) : null;
+}
 
-    function fmtHeader() {
-      return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    }
+function taskColId(task, weekDays) {
+  if (!task.scheduled_date) return 'beyond';
+  const wStrs = weekDays.map(dateStr);
+  const idx = wStrs.indexOf(task.scheduled_date);
+  if (idx === 0) return 'mon';
+  if (idx === 1) return 'tue';
+  if (idx === 2) return 'wed';
+  if (idx === 3) return 'thu';
+  if (idx === 4) return 'fri';
+  if (idx === 5 || idx === 6) return 'weekend';
+  return 'beyond';
+}
 
-    // ── SVG icons ────────────────────────────────────────────
-    const Ic = {
-      Check: () => (
-        <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
-        </svg>
-      ),
-      Plus: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6">
-          <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
-        </svg>
-      ),
-      X: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-          <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
-        </svg>
-      ),
-      ChevDown: () => (
-        <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-          <path d="M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z"/>
-        </svg>
-      ),
-      ChevUp: () => (
-        <svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-          <path d="M11.78 9.78a.75.75 0 01-1.06 0L8 7.06 5.28 9.78a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06z"/>
-        </svg>
-      ),
-      Today: ({ active }) => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd"/>
-        </svg>
-      ),
-      Backlog: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 012 14.75z" clipRule="evenodd"/>
-        </svg>
-      ),
-      Waiting: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd"/>
-        </svg>
-      ),
-      Reading: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.506 7.506 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z"/>
-        </svg>
-      ),
-      Drag: () => (
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 opacity-30">
-          <path d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"/>
-        </svg>
-      ),
-    };
+function todayColIdx() {
+  const dow = new Date().getDay();
+  if (dow === 0 || dow === 6) return 5;
+  return dow - 1;
+}
 
-    // ── TaskCard ─────────────────────────────────────────────
-    function TaskCard({ task, onUpdate, onDone, draggable, dragHandlers, isDragOver }) {
-      const [open, setOpen] = useState(false);
-      const due = fmtDue(task.due_date);
-      const src = task.source_account ? SRC[task.source_account] : null;
+function fmtDue(d) {
+  if (!d) return null;
+  const dt = new Date(d+'T00:00:00'), today = new Date(), tom = new Date();
+  tom.setDate(today.getDate()+1);
+  if (dt.toDateString()===today.toDateString()) return {str:'Today',   over:false};
+  if (dt.toDateString()===tom.toDateString())   return {str:'Tomorrow',over:false};
+  return { str: dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}), over: dt<today };
+}
 
-      function quickAction(updates, e) {
-        e.stopPropagation();
-        onUpdate(task.id, updates);
-        setOpen(false);
-      }
+function fmtHeader() {
+  return new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
 
-      return (
-        <div
-          className={`task-card border-b border-zinc-800/60 ${isDragOver ? 'drag-over-top' : ''}`}
-          {...(dragHandlers || {})}
-        >
-          {/* Main row */}
-          <div
-            className="flex items-start gap-3 px-4 py-3.5 cursor-pointer"
-            onClick={() => setOpen(o => !o)}
-          >
-            {/* Drag handle (desktop) */}
-            {draggable && (
-              <div className="hidden sm:flex mt-1 flex-shrink-0 cursor-grab active:cursor-grabbing">
-                <Ic.Drag />
-              </div>
-            )}
+// ── Icons ───────────────────────────────────────────────────
+const Ic = {
+  Check:   ()=><svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>,
+  Plus:    ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/></svg>,
+  X:       ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>,
+  ChevD:   ()=><svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z"/></svg>,
+  ChevU:   ()=><svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.78 9.78a.75.75 0 01-1.06 0L8 7.06 5.28 9.78a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06z"/></svg>,
+  ChevL:   ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd"/></svg>,
+  ChevR:   ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd"/></svg>,
+  Week:    ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd"/></svg>,
+  Waiting: ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd"/></svg>,
+  Reading: ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.506 7.506 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z"/></svg>,
+};
 
-            {/* Complete circle */}
-            <div
-              className="check-circle mt-0.5"
-              onClick={e => { e.stopPropagation(); onDone(task.id); }}
-            >
-              <span className="opacity-0 group-hover:opacity-100 text-indigo-400">
-                <Ic.Check />
-              </span>
-            </div>
+// ── TaskCard ────────────────────────────────────────────────
+function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, dragHandlers, isDragOver }) {
+  const [open, setOpen] = useState(false);
+  const due = fmtDue(task.due_date);
+  const src = task.source_account ? SRC[task.source_account] : null;
+  const currentCol = taskColId(task, weekDays);
 
-            {/* Body */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2">
-                {task.priority && (
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${PRI[task.priority]?.dot}`} />
-                )}
-                <p className="text-sm text-zinc-100 leading-snug">{task.title}</p>
-              </div>
+  function qa(updates, e) { e.stopPropagation(); onUpdate(task.id, updates); setOpen(false); }
 
-              {/* Meta pills */}
-              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                {src && (
-                  <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${src.dot}`} />
-                    {src.label}
-                  </span>
-                )}
-                {due && (
-                  <span className={`text-[10px] font-medium ${due.over ? 'text-red-400' : 'text-zinc-500'}`}>
-                    {due.over ? '⚠ ' : ''}{due.str}
-                  </span>
-                )}
-                {task.waiting_on && (
-                  <span className="text-[10px] text-amber-400/80">⏳ {task.waiting_on}</span>
-                )}
-                {task.tags && task.tags.filter(Boolean).map(tag => (
-                  <span key={tag} className="text-[10px] text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded">#{tag}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-zinc-600 flex-shrink-0 mt-0.5">
-              {open ? <Ic.ChevUp /> : <Ic.ChevDown />}
-            </div>
-          </div>
-
-          {/* Expanded panel */}
-          {open && (
-            <div className="px-4 pb-4 ml-11 anim-item" onClick={e => e.stopPropagation()}>
-              {task.notes && (
-                <p className="text-xs text-zinc-400 leading-relaxed mb-3 whitespace-pre-wrap border-l-2 border-zinc-700 pl-3">
-                  {task.notes}
-                </p>
-              )}
-
-              {/* Action buttons */}
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={e => { e.stopPropagation(); onDone(task.id); }}
-                  className="text-xs font-medium bg-zinc-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-zinc-300 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  ✓ Done
-                </button>
-                {task.status !== 'active' && (
-                  <button
-                    onClick={e => quickAction({ status: 'active' }, e)}
-                    className="text-xs font-medium bg-zinc-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    ↑ Today
-                  </button>
-                )}
-                {task.status !== 'backlog' && (
-                  <button
-                    onClick={e => quickAction({ status: 'backlog' }, e)}
-                    className="text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    → Backlog
-                  </button>
-                )}
-                {task.status !== 'waiting' && (
-                  <button
-                    onClick={e => quickAction({ status: 'waiting' }, e)}
-                    className="text-xs font-medium bg-zinc-800 hover:bg-amber-500/20 hover:text-amber-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors"
-                  >
-                    ⏳ Waiting
-                  </button>
-                )}
-                <button
-                  onClick={e => {
-                    const tom = new Date(); tom.setDate(tom.getDate() + 1);
-                    quickAction({ status: 'snoozed', snooze_until: tom.toISOString() }, e);
-                  }}
-                  className="text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-400 px-3 py-1.5 rounded-full transition-colors"
-                >
-                  ⏰ Tomorrow
-                </button>
-              </div>
-            </div>
-          )}
+  return (
+    <div className={`task-card border-b border-zinc-800/60 ${isDragOver ? 'border-t-2 border-t-indigo-500' : ''}`} {...(dragHandlers||{})}>
+      <div className="flex items-start gap-3 px-3 py-3 cursor-pointer" onClick={()=>setOpen(o=>!o)}>
+        {draggable && <div className="hidden sm:flex mt-1 flex-shrink-0 opacity-25 cursor-grab"><svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"/></svg></div>}
+        <div className="check-circle mt-0.5" onClick={e=>{e.stopPropagation();onDone(task.id);}}>
+          <span className="opacity-0 group-hover:opacity-100 text-indigo-400"><Ic.Check /></span>
         </div>
-      );
-    }
-
-    // ── ReadingCard ──────────────────────────────────────────
-    function ReadingCard({ item, onMarkRead }) {
-      const src = item.source_account ? SRC[item.source_account] : null;
-      const isRead = !!item.read_at;
-
-      let hostname = '';
-      try { hostname = new URL(item.url).hostname.replace(/^www\./, ''); } catch (_) {}
-
-      return (
-        <div className={`task-card flex items-start gap-3 px-4 py-3.5 border-b border-zinc-800/60 transition-opacity ${isRead ? 'opacity-35' : ''}`}>
-          <div className="flex-1 min-w-0">
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-sm text-zinc-100 hover:text-indigo-400 leading-snug mb-1.5 transition-colors"
-              onClick={() => !isRead && onMarkRead(item.id)}
-            >
-              {item.title || item.url}
-            </a>
-            <div className="flex items-center gap-2">
-              {src && (
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}>
-                  {src.label}
-                </span>
-              )}
-              {hostname && <span className="text-[10px] text-zinc-600 truncate">{hostname}</span>}
-            </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-1.5">
+            {task.priority && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${PRI[task.priority]?.dot}`}/>}
+            <p className="text-sm text-zinc-100 leading-snug">{task.title}</p>
           </div>
-          {!isRead && (
-            <button
-              onClick={() => onMarkRead(item.id)}
-              className="flex-shrink-0 text-[10px] font-medium text-zinc-500 hover:text-emerald-400 bg-zinc-800 hover:bg-emerald-500/10 px-2.5 py-1.5 rounded-full transition-colors mt-0.5"
-            >
-              ✓ Read
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    // ── AddTaskModal ─────────────────────────────────────────
-    function AddTaskModal({ onClose, onAdd, defaultStatus }) {
-      const [form, setForm] = useState({
-        title: '', notes: '', status: defaultStatus || 'active',
-        priority: 2, due_date: '', waiting_on: '', source_account: '',
-      });
-      const [saving, setSaving] = useState(false);
-      const titleRef = useRef(null);
-
-      useEffect(() => { setTimeout(() => titleRef.current?.focus(), 80); }, []);
-
-      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-      async function submit(e) {
-        e.preventDefault();
-        if (!form.title.trim()) return;
-        setSaving(true);
-        await onAdd({
-          title:          form.title.trim(),
-          notes:          form.notes.trim() || null,
-          status:         form.status,
-          priority:       Number(form.priority),
-          due_date:       form.due_date || null,
-          waiting_on:     form.waiting_on.trim() || null,
-          source:         'manual',
-          source_account: form.source_account || null,
-        });
-        onClose();
-      }
-
-      // Close on backdrop click
-      function onBackdrop(e) { if (e.target === e.currentTarget) onClose(); }
-
-      return (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center anim-fade bg-black/60 backdrop-blur-sm"
-          onClick={onBackdrop}
-        >
-          <div className="relative w-full sm:max-w-md bg-zinc-900 border border-zinc-800 sm:rounded-2xl rounded-t-2xl shadow-2xl anim-modal pb-safe">
-            {/* Handle bar (mobile) */}
-            <div className="flex justify-center pt-3 sm:hidden">
-              <div className="w-10 h-1 bg-zinc-700 rounded-full" />
-            </div>
-
-            <div className="px-5 pt-4 pb-6 sm:pt-5">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold text-zinc-100">New task</h2>
-                <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 transition-colors p-1">
-                  <Ic.X />
-                </button>
-              </div>
-
-              <form onSubmit={submit} className="space-y-3.5">
-                {/* Title */}
-                <input
-                  ref={titleRef}
-                  type="text"
-                  placeholder="What needs to get done?"
-                  value={form.title}
-                  onChange={e => set('title', e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70 transition-colors"
-                />
-
-                {/* Notes */}
-                <textarea
-                  placeholder="Notes (optional)"
-                  value={form.notes}
-                  onChange={e => set('notes', e.target.value)}
-                  rows={3}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70 transition-colors resize-none"
-                />
-
-                {/* Row: Add to + Priority */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Add to</label>
-                    <select
-                      value={form.status}
-                      onChange={e => set('status', e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer"
-                    >
-                      <option value="active">📅 Today</option>
-                      <option value="backlog">📋 Backlog</option>
-                      <option value="waiting">⏳ Waiting</option>
-                      <option value="someday">🌙 Someday</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Priority</label>
-                    <select
-                      value={form.priority}
-                      onChange={e => set('priority', Number(e.target.value))}
-                      className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer"
-                    >
-                      <option value={1}>🔴 High</option>
-                      <option value={2}>🟡 Medium</option>
-                      <option value={3}>⚪ Low</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Row: Due date + Waiting on */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Due date</label>
-                    <input
-                      type="date"
-                      value={form.due_date}
-                      onChange={e => set('due_date', e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Waiting on</label>
-                    <input
-                      type="text"
-                      placeholder="Person…"
-                      value={form.waiting_on}
-                      onChange={e => set('waiting_on', e.target.value)}
-                      className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/70"
-                    />
-                  </div>
-                </div>
-
-                {/* Source */}
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Source</label>
-                  <select
-                    value={form.source_account}
-                    onChange={e => set('source_account', e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer"
-                  >
-                    {SRC_OPTIONS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!form.title.trim() || saving}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 text-white font-semibold text-sm rounded-xl py-3 transition-colors mt-1"
-                >
-                  {saving ? 'Adding…' : 'Add task'}
-                </button>
-              </form>
-            </div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+            {src && <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}><span className={`w-1.5 h-1.5 rounded-full ${src.dot}`}/>{src.label}</span>}
+            {due && <span className={`text-[10px] font-medium ${due.over?'text-red-400':'text-zinc-500'}`}>{due.over?'⚠ ':''}{due.str}</span>}
+            {task.waiting_on && <span className="text-[10px] text-amber-400/80">⏳ {task.waiting_on}</span>}
           </div>
         </div>
-      );
-    }
+        <div className="text-zinc-600 flex-shrink-0 mt-0.5">{open?<Ic.ChevU/>:<Ic.ChevD/>}</div>
+      </div>
 
-    // ── Section heading ──────────────────────────────────────
-    function SectionHead({ count, label }) {
-      return (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-800/60 bg-zinc-950/80 sticky top-0 backdrop-blur-sm z-10">
-          <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</span>
-          <span className="text-[11px] font-semibold text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">{count}</span>
-        </div>
-      );
-    }
+      {open && (
+        <div className="px-3 pb-3 ml-9 anim-item" onClick={e=>e.stopPropagation()}>
+          {task.notes && <p className="text-xs text-zinc-400 leading-relaxed mb-3 whitespace-pre-wrap border-l-2 border-zinc-700 pl-3">{task.notes}</p>}
 
-    // ── Empty state ──────────────────────────────────────────
-    function Empty({ tab, onAdd }) {
-      const m = {
-        today:   { icon: '🌅', h: 'All clear for today',     s: 'Tap + to add something, or pull tasks up from your backlog.' },
-        backlog: { icon: '📋', h: 'Backlog is empty',        s: 'Tasks that aren\'t urgent today live here.' },
-        waiting: { icon: '⏳', h: 'Nothing in flight',       s: 'Tasks where you\'re waiting on someone else.' },
-        reading: { icon: '📚', h: 'Reading list is empty',   s: 'Save articles, links, and newsletters here.' },
-      }[tab];
-      return (
-        <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-          <span className="text-4xl mb-4 select-none">{m.icon}</span>
-          <p className="text-sm font-semibold text-zinc-300 mb-1.5">{m.h}</p>
-          <p className="text-xs text-zinc-600 leading-relaxed max-w-[220px]">{m.s}</p>
-          {(tab === 'today' || tab === 'backlog') && (
-            <button
-              onClick={onAdd}
-              className="mt-5 text-xs font-medium text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 hover:border-indigo-500/60 px-4 py-2 rounded-full transition-colors"
-            >
-              + Add task
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    // ── Main App ─────────────────────────────────────────────
-    function App() {
-      const [tasks,       setTasks]       = useState([]);
-      const [reading,     setReading]     = useState([]);
-      const [tab,         setTab]         = useState('today');
-      const [loading,     setLoading]     = useState(true);
-      const [error,       setError]       = useState(null);
-      const [showAdd,     setShowAdd]     = useState(false);
-      const [dragId,      setDragId]      = useState(null);
-      const [dragOverId,  setDragOverId]  = useState(null);
-
-      // ── Fetch ──────────────────────────────────────────────
-      const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const [{ data: t, error: te }, { data: r, error: re }] = await Promise.all([
-            db.from('tasks').select('*').neq('status', 'done').order('sort_order', { ascending: true, nullsFirst: false }),
-            db.from('reading_list').select('*').order('created_at', { ascending: false }),
-          ]);
-          if (te) throw te;
-          if (re) throw re;
-          setTasks(t || []);
-          setReading(r || []);
-        } catch (e) {
-          setError(e.message || 'Failed to connect to database.');
-        } finally {
-          setLoading(false);
-        }
-      }, []);
-
-      useEffect(() => { load(); }, [load]);
-
-      // ── CRUD ──────────────────────────────────────────────
-      const updateTask = useCallback(async (id, updates) => {
-        setTasks(p => p.map(t => t.id === id ? { ...t, ...updates } : t));
-        const { error } = await db.from('tasks').update(updates).eq('id', id);
-        if (error) load();
-      }, [load]);
-
-      const markDone = useCallback(async (id) => {
-        setTasks(p => p.filter(t => t.id !== id));
-        const { error } = await db.from('tasks').update({
-          status: 'done', completed_at: new Date().toISOString()
-        }).eq('id', id);
-        if (error) load();
-      }, [load]);
-
-      const addTask = useCallback(async (data) => {
-        const maxOrder = tasks.filter(t => t.status === 'active').reduce((m, t) => Math.max(m, t.sort_order || 0), 0);
-        const payload = { ...data, sort_order: maxOrder + 100 };
-        const { data: rows, error } = await db.from('tasks').insert([payload]).select();
-        if (!error && rows) setTasks(p => [...p, rows[0]]);
-        else if (error) load();
-      }, [tasks, load]);
-
-      const markRead = useCallback(async (id) => {
-        const now = new Date().toISOString();
-        setReading(p => p.map(r => r.id === id ? { ...r, read_at: now } : r));
-        await db.from('reading_list').update({ read_at: now }).eq('id', id);
-      }, []);
-
-      // ── Drag to reorder (Today) ────────────────────────────
-      const handleDragStart = useCallback((e, id) => {
-        setDragId(id);
-        e.dataTransfer.effectAllowed = 'move';
-      }, []);
-
-      const handleDragOver = useCallback((e, id) => {
-        e.preventDefault();
-        setDragOverId(id);
-      }, []);
-
-      const handleDrop = useCallback(async (e, targetId) => {
-        e.preventDefault();
-        if (!dragId || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
-
-        const active = tasks.filter(t => t.status === 'active')
-          .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
-        const fromIdx = active.findIndex(t => t.id === dragId);
-        const toIdx   = active.findIndex(t => t.id === targetId);
-
-        const reordered = [...active];
-        const [moved] = reordered.splice(fromIdx, 1);
-        reordered.splice(toIdx, 0, moved);
-
-        const updates = reordered.map((t, i) => ({ id: t.id, sort_order: (i + 1) * 100 }));
-        const orderMap = Object.fromEntries(updates.map(u => [u.id, u.sort_order]));
-
-        setTasks(p => p.map(t => orderMap[t.id] !== undefined ? { ...t, sort_order: orderMap[t.id] } : t));
-        setDragId(null); setDragOverId(null);
-
-        for (const { id, sort_order } of updates) {
-          await db.from('tasks').update({ sort_order }).eq('id', id);
-        }
-      }, [dragId, tasks]);
-
-      const handleDragEnd = useCallback(() => { setDragId(null); setDragOverId(null); }, []);
-
-      // ── Computed ──────────────────────────────────────────
-      const todayTasks   = useMemo(() => tasks.filter(t => t.status === 'active').sort((a,b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999) || (a.priority ?? 2) - (b.priority ?? 2)), [tasks]);
-      const backlogTasks = useMemo(() => tasks.filter(t => t.status === 'backlog').sort((a,b) => (a.priority ?? 2) - (b.priority ?? 2)), [tasks]);
-      const waitingTasks = useMemo(() => tasks.filter(t => t.status === 'waiting').sort((a,b) => new Date(b.created_at) - new Date(a.created_at)), [tasks]);
-      const unreadCount  = useMemo(() => reading.filter(r => !r.read_at).length, [reading]);
-
-      // ── Tabs config ───────────────────────────────────────
-      const tabs = [
-        { id: 'today',   label: 'Today',   Icon: Ic.Today,   count: todayTasks.length },
-        { id: 'backlog', label: 'Backlog',  Icon: Ic.Backlog, count: backlogTasks.length },
-        { id: 'waiting', label: 'Waiting',  Icon: Ic.Waiting, count: waitingTasks.length },
-        { id: 'reading', label: 'Reading',  Icon: Ic.Reading, count: unreadCount },
-      ];
-
-      // ── Render content ────────────────────────────────────
-      function renderContent() {
-        if (loading) return (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
-            <div className="w-6 h-6 rounded-full border-2 border-indigo-500 border-t-transparent spinner" />
-            <p className="text-xs text-zinc-600">Loading…</p>
+          {/* Done / status actions */}
+          <div className="flex flex-wrap gap-1.5 mb-2.5">
+            <button onClick={e=>{e.stopPropagation();onDone(task.id);}} className="text-xs font-medium bg-zinc-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-zinc-300 px-3 py-1.5 rounded-full transition-colors">✓ Done</button>
+            {task.status !== 'waiting' && <button onClick={e=>qa({status:'waiting'},e)} className="text-xs font-medium bg-zinc-800 hover:bg-amber-500/20 hover:text-amber-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors">⏳ Waiting</button>}
+            {task.status === 'waiting' && <button onClick={e=>qa({status:'active'},e)} className="text-xs font-medium bg-zinc-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors">↑ Active</button>}
           </div>
-        );
 
-        if (error) return (
-          <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-3">
-            <p className="text-sm font-medium text-red-400">Connection error</p>
-            <p className="text-xs text-zinc-600 leading-relaxed">{error}</p>
-            <button onClick={load} className="text-xs text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-4 py-1.5 rounded-full transition-colors">
-              Retry
-            </button>
+          {/* Move to day */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] text-zinc-600 font-medium uppercase tracking-wide mr-0.5">Move to</span>
+            {WEEK_COLS.map(col => col.id === currentCol ? null : (
+              <button key={col.id} onClick={e=>{e.stopPropagation();onReschedule(task.id,col.id);setOpen(false);}}
+                className="text-[10px] font-medium bg-zinc-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-zinc-400 px-2 py-1 rounded-full transition-colors">
+                {col.id==='beyond'?'∞ Beyond':col.label}
+              </button>
+            ))}
           </div>
-        );
+        </div>
+      )}
+    </div>
+  );
+}
 
-        if (tab === 'today') {
-          if (!todayTasks.length) return <Empty tab="today" onAdd={() => setShowAdd(true)} />;
-          return (
-            <div>
-              <SectionHead label="Today" count={todayTasks.length} />
-              {todayTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onUpdate={updateTask}
-                  onDone={markDone}
-                  draggable
-                  isDragOver={dragOverId === task.id && dragId !== task.id}
-                  dragHandlers={{
-                    draggable: true,
-                    onDragStart: e => handleDragStart(e, task.id),
-                    onDragOver:  e => handleDragOver(e, task.id),
-                    onDrop:      e => handleDrop(e, task.id),
-                    onDragEnd:   handleDragEnd,
-                    className:   dragId === task.id ? 'opacity-40' : '',
-                  }}
-                />
-              ))}
-              {/* Spacer for FAB */}
-              <div className="h-20" />
-            </div>
-          );
-        }
+// ── ReadingCard ─────────────────────────────────────────────
+function ReadingCard({ item, onMarkRead }) {
+  const src = item.source_account ? SRC[item.source_account] : null;
+  let host=''; try { host=new URL(item.url).hostname.replace(/^www\./,''); } catch(_){}
+  return (
+    <div className={`task-card flex items-start gap-3 px-4 py-3.5 border-b border-zinc-800/60 ${item.read_at?'opacity-35':''}`}>
+      <div className="flex-1 min-w-0">
+        <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={()=>!item.read_at&&onMarkRead(item.id)}
+          className="block text-sm text-zinc-100 hover:text-indigo-400 leading-snug mb-1.5 transition-colors">
+          {item.title||item.url}
+        </a>
+        <div className="flex items-center gap-2">
+          {src && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}>{src.label}</span>}
+          {host && <span className="text-[10px] text-zinc-600 truncate">{host}</span>}
+        </div>
+      </div>
+      {!item.read_at && <button onClick={()=>onMarkRead(item.id)} className="flex-shrink-0 text-[10px] font-medium text-zinc-500 hover:text-emerald-400 bg-zinc-800 hover:bg-emerald-500/10 px-2.5 py-1.5 rounded-full transition-colors mt-0.5">✓ Read</button>}
+    </div>
+  );
+}
 
-        if (tab === 'backlog') {
-          if (!backlogTasks.length) return <Empty tab="backlog" onAdd={() => setShowAdd(true)} />;
-          return (
-            <div>
-              <SectionHead label="Backlog" count={backlogTasks.length} />
-              {backlogTasks.map(task => (
-                <TaskCard key={task.id} task={task} onUpdate={updateTask} onDone={markDone} />
-              ))}
-              <div className="h-20" />
-            </div>
-          );
-        }
+// ── AddTaskModal ────────────────────────────────────────────
+function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
+  const defaultDate = defaultColId && defaultColId !== 'beyond' ? colDate(defaultColId, weekDays) : '';
+  const [form, setForm] = useState({
+    title:'', notes:'', status:'active', priority:2,
+    due_date:'', waiting_on:'', source_account:'',
+    scheduled_date: defaultDate || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const titleRef = useRef(null);
+  useEffect(()=>{ setTimeout(()=>titleRef.current?.focus(),80); },[]);
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
 
-        if (tab === 'waiting') {
-          if (!waitingTasks.length) return <Empty tab="waiting" />;
-          return (
-            <div>
-              <SectionHead label="Waiting on" count={waitingTasks.length} />
-              {waitingTasks.map(task => (
-                <TaskCard key={task.id} task={task} onUpdate={updateTask} onDone={markDone} />
-              ))}
-              <div className="h-20" />
-            </div>
-          );
-        }
+  async function submit(e) {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    setSaving(true);
+    await onAdd({
+      title:          form.title.trim(),
+      notes:          form.notes.trim()||null,
+      status:         form.status,
+      priority:       Number(form.priority),
+      due_date:       form.due_date||null,
+      waiting_on:     form.waiting_on.trim()||null,
+      source:         'manual',
+      source_account: form.source_account||null,
+      scheduled_date: form.scheduled_date||null,
+    });
+    onClose();
+  }
 
-        if (tab === 'reading') {
-          if (!reading.length) return <Empty tab="reading" />;
-          const unread = reading.filter(r => !r.read_at);
-          const read   = reading.filter(r =>  r.read_at);
-          return (
-            <div>
-              {unread.length > 0 && (
-                <>
-                  <SectionHead label="Unread" count={unread.length} />
-                  {unread.map(item => <ReadingCard key={item.id} item={item} onMarkRead={markRead} />)}
-                </>
-              )}
-              {read.length > 0 && (
-                <>
-                  <SectionHead label="Read" count={read.length} />
-                  {read.map(item => <ReadingCard key={item.id} item={item} onMarkRead={markRead} />)}
-                </>
-              )}
-              <div className="h-20" />
-            </div>
-          );
-        }
-      }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center anim-fade bg-black/60 backdrop-blur-sm" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="relative w-full sm:max-w-md bg-zinc-900 border border-zinc-800 sm:rounded-2xl rounded-t-2xl shadow-2xl anim-modal pb-safe">
+        <div className="flex justify-center pt-3 sm:hidden"><div className="w-10 h-1 bg-zinc-700 rounded-full"/></div>
+        <div className="px-5 pt-4 pb-6 sm:pt-5">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold text-zinc-100">New task</h2>
+            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"><Ic.X/></button>
+          </div>
+          <form onSubmit={submit} className="space-y-3.5">
+            <input ref={titleRef} type="text" placeholder="What needs to get done?"
+              value={form.title} onChange={e=>set('title',e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70"/>
+            <textarea placeholder="Notes (optional)" value={form.notes} onChange={e=>set('notes',e.target.value)} rows={3}
+              className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70 resize-none"/>
 
-      return (
-        <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
-
-          {/* ── Header ──────────────────────────────────────── */}
-          <header className="flex-shrink-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 pt-safe">
-            <div className="flex items-center justify-between px-4 pt-4 pb-3">
-              {/* Logo + date */}
+            {/* Schedule for + Priority */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="flex items-center gap-2">
-                  {/* Stacked layers logo */}
-                  <svg width="16" height="16" viewBox="0 0 16 16" className="text-indigo-500">
-                    <rect x="0" y="11" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.35"/>
-                    <rect x="0" y="6.75" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.65"/>
-                    <rect x="0" y="2.5" width="16" height="2.5" rx="1.25" fill="currentColor"/>
-                  </svg>
-                  <span className="text-sm font-bold text-zinc-100 tracking-tight">Bedrock</span>
-                </div>
-                <p className="text-[11px] text-zinc-600 mt-0.5 ml-6">{fmtHeader()}</p>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Schedule for</label>
+                <select value={form.scheduled_date} onChange={e=>set('scheduled_date',e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
+                  <option value="">Beyond</option>
+                  {WEEK_COLS.filter(c=>c.id!=='beyond').map(col=>{
+                    const d = colDate(col.id, weekDays);
+                    const label = col.id==='weekend'
+                      ? `Weekend (${new Date(weekDays[5]).toLocaleDateString('en-US',{month:'numeric',day:'numeric'})})`
+                      : `${col.label} (${new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'})})`;
+                    return <option key={col.id} value={d||''}>{label}</option>;
+                  })}
+                </select>
               </div>
-
-              {/* Quick stats */}
-              <div className="flex items-center gap-3">
-                {todayTasks.length > 0 && (
-                  <div className="text-right">
-                    <span className="text-xl font-bold text-zinc-100">{todayTasks.length}</span>
-                    <p className="text-[10px] text-zinc-600 -mt-0.5">today</p>
-                  </div>
-                )}
-                {unreadCount > 0 && (
-                  <div className="text-right">
-                    <span className="text-xl font-bold text-zinc-100">{unreadCount}</span>
-                    <p className="text-[10px] text-zinc-600 -mt-0.5">unread</p>
-                  </div>
-                )}
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Priority</label>
+                <select value={form.priority} onChange={e=>set('priority',Number(e.target.value))}
+                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
+                  <option value={1}>🔴 High</option>
+                  <option value={2}>🟡 Medium</option>
+                  <option value={3}>⚪ Low</option>
+                </select>
               </div>
             </div>
 
-            {/* Desktop tab bar */}
-            <div className="hidden sm:flex items-center gap-0.5 px-3 pb-3">
-              {tabs.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`tab-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                    ${tab === t.id
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'
-                    }`}
-                >
-                  <t.Icon />
-                  {t.label}
-                  {t.count > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold
-                      ${tab === t.id ? 'bg-indigo-500/25 text-indigo-400' : 'bg-zinc-800 text-zinc-600'}`}>
-                      {t.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+            {/* Due date + Waiting on */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Due date</label>
+                <input type="date" value={form.due_date} onChange={e=>set('due_date',e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70"/>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Waiting on</label>
+                <input type="text" placeholder="Person…" value={form.waiting_on} onChange={e=>set('waiting_on',e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/70"/>
+              </div>
             </div>
-          </header>
 
-          {/* ── Content ─────────────────────────────────────── */}
-          <main className="flex-1 overflow-y-auto" key={tab}>
-            {renderContent()}
-          </main>
-
-          {/* ── Mobile bottom tab bar ────────────────────────── */}
-          <nav className="sm:hidden flex-shrink-0 border-t border-zinc-800/50 bg-zinc-950/95 backdrop-blur-md pb-safe">
-            <div className="flex">
-              {tabs.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`tab-btn flex-1 flex flex-col items-center gap-1 pt-3 pb-2 transition-colors
-                    ${tab === t.id ? 'text-indigo-400' : 'text-zinc-600'}`}
-                >
-                  <div className="relative">
-                    <t.Icon />
-                    {t.count > 0 && (
-                      <span className="absolute -top-1.5 -right-2.5 bg-indigo-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5 leading-none">
-                        {t.count > 9 ? '9+' : t.count}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] font-medium">{t.label}</span>
-                  {tab === t.id && <div className="tab-active-dot" />}
-                </button>
-              ))}
+            {/* Source */}
+            <div>
+              <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Source</label>
+              <select value={form.source_account} onChange={e=>set('source_account',e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
+                {SRC_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-          </nav>
 
-          {/* ── Floating add button ──────────────────────────── */}
-          <button
-            onClick={() => setShowAdd(true)}
-            className="fixed z-40 bottom-[76px] right-4 sm:bottom-6 sm:right-6 w-12 h-12 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-900/50 flex items-center justify-center transition-all active:scale-95"
-            aria-label="Add task"
-          >
-            <Ic.Plus />
-          </button>
-
-          {/* ── Add task modal ───────────────────────────────── */}
-          {showAdd && (
-            <AddTaskModal
-              onClose={() => setShowAdd(false)}
-              onAdd={addTask}
-              defaultStatus={tab === 'waiting' ? 'waiting' : tab === 'backlog' ? 'backlog' : 'active'}
-            />
-          )}
+            <button type="submit" disabled={!form.title.trim()||saving}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 text-white font-semibold text-sm rounded-xl py-3 transition-colors">
+              {saving?'Adding…':'Add task'}
+            </button>
+          </form>
         </div>
-      );
-    }
+      </div>
+    </div>
+  );
+}
 
-    // ── Boot ─────────────────────────────────────────────────
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
+// ── WeekView ────────────────────────────────────────────────
+function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, activeDay, setActiveDay }) {
+  const touchStartX = useRef(null);
+  const [draggedId, setDraggedId]   = useState(null);
+  const [colDragOver, setColDragOver] = useState(null);
+
+  // Group tasks by column
+  const colTasks = useMemo(()=>{
+    const groups = Object.fromEntries(WEEK_COLS.map(c=>[c.id,[]]));
+    tasks.filter(t=>t.status!=='waiting').forEach(t=>{
+      const col = taskColId(t, weekDays);
+      (groups[col]||groups.beyond).push(t);
+    });
+    // sort each column by priority then sort_order
+    Object.values(groups).forEach(arr=>arr.sort((a,b)=>(a.priority??2)-(b.priority??2)||(a.sort_order??9999)-(b.sort_order??9999)));
+    return groups;
+  },[tasks, weekDays]);
+
+  // Touch swipe
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 45) {
+      if (dx < 0 && activeDay < WEEK_COLS.length-1) setActiveDay(d=>d+1);
+      if (dx > 0 && activeDay > 0) setActiveDay(d=>d-1);
+    }
+    touchStartX.current = null;
+  }
+
+  // Desktop drag between columns
+  function onCardDragStart(e, taskId) { setDraggedId(taskId); e.dataTransfer.effectAllowed='move'; }
+  function onColDragOver(e, colId)    { e.preventDefault(); setColDragOver(colId); }
+  function onColDrop(e, colId)        {
+    e.preventDefault();
+    if (draggedId) onReschedule(draggedId, colId);
+    setDraggedId(null); setColDragOver(null);
+  }
+  function onDragEnd() { setDraggedId(null); setColDragOver(null); }
+
+  // Column header date label
+  function colDateLabel(col) {
+    if (col.id==='beyond') return '';
+    if (col.id==='weekend') return `${weekDays[5].getDate()}–${weekDays[6].getDate()}`;
+    return weekDays[col.dayOffset].getDate();
+  }
+
+  function isToday(col) {
+    if (col.id==='beyond') return false;
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (col.id==='weekend') return today.toDateString()===weekDays[5].toDateString()||today.toDateString()===weekDays[6].toDateString();
+    return weekDays[col.dayOffset]?.toDateString()===today.toDateString();
+  }
+
+  // Shared card renderer
+  function renderCards(colId) {
+    const list = colTasks[colId]||[];
+    if (!list.length) return (
+      <div className="px-4 py-6 text-center text-xs text-zinc-700">Nothing scheduled</div>
+    );
+    return list.map(task=>(
+      <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDone={onDone}
+        onReschedule={onReschedule} weekDays={weekDays} draggable
+        dragHandlers={{
+          draggable:true,
+          onDragStart:e=>onCardDragStart(e,task.id),
+          onDragEnd,
+          className: draggedId===task.id?'opacity-40':'',
+        }}
+      />
+    ));
+  }
+
+  // ── Mobile ────────────────────────────────────────────────
+  const isMobile = typeof window!=='undefined' && window.innerWidth < 640;
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+
+      {/* Day pills */}
+      <div className="flex-shrink-0 flex items-center gap-0.5 overflow-x-auto px-3 pt-2 pb-1" style={{scrollbarWidth:'none'}}>
+        {WEEK_COLS.map((col,i)=>{
+          const active = activeDay===i;
+          const today  = isToday(col);
+          const count  = (colTasks[col.id]||[]).length;
+          return (
+            <button key={col.id} onClick={()=>setActiveDay(i)}
+              className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl min-w-[36px] transition-colors
+                ${active ? (today?'bg-indigo-600 text-white':'bg-zinc-800 text-zinc-100') : (today?'text-indigo-400':'text-zinc-600')}`}>
+              <span className="text-[11px] font-bold">{col.short}</span>
+              {col.id!=='beyond' && <span className="text-[10px] opacity-70">{colDateLabel(col)}</span>}
+              {col.id==='beyond' && <span className="text-[10px] beyond-glyph opacity-50"></span>}
+              <span className={`w-1 h-1 rounded-full transition-colors ${count>0?(active?'bg-white/60':'bg-indigo-500'):'bg-transparent'}`}/>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Mobile: swipeable slides ──────────────────────── */}
+      <div className="sm:hidden flex-1 overflow-hidden week-slider-wrap"
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div className="week-slider h-full" style={{transform:`translateX(-${activeDay*100}%)`}}>
+          {WEEK_COLS.map(col=>(
+            <div key={col.id} className="week-slide">
+              {/* Column label */}
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 sticky top-0 bg-zinc-950/95 backdrop-blur-sm">
+                <div>
+                  <span className="text-sm font-semibold text-zinc-200">{col.label}</span>
+                  {col.id!=='beyond' && <span className="text-xs text-zinc-600 ml-2">
+                    {col.id==='weekend'
+                      ? `${weekDays[5].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${weekDays[6].toLocaleDateString('en-US',{day:'numeric'})}`
+                      : weekDays[col.dayOffset]?.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+                  </span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-600">{(colTasks[col.id]||[]).length} tasks</span>
+                </div>
+              </div>
+              <div className="overflow-y-auto" style={{height:'calc(100% - 44px)'}}>
+                {renderCards(col.id)}
+                <div className="h-24"/>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Desktop: kanban columns ───────────────────────── */}
+      <div className="hidden sm:block flex-1 overflow-hidden">
+        <div className="kanban-wrap">
+          {WEEK_COLS.map(col=>(
+            <div key={col.id}
+              className={`kanban-col ${colDragOver===col.id&&draggedId?'drag-over-col':''}`}
+              onDragOver={e=>onColDragOver(e,col.id)}
+              onDrop={e=>onColDrop(e,col.id)}
+              onDragLeave={()=>setColDragOver(null)}>
+
+              {/* Column header */}
+              <div className={`px-3 py-2.5 border-b border-zinc-800 ${isToday(col)?'bg-indigo-600/10':''}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isToday(col)?'text-indigo-400':'text-zinc-400'}`}>{col.label}</span>
+                    {col.id!=='beyond' && <span className="text-[11px] text-zinc-600">
+                      {col.id==='weekend'
+                        ? `${weekDays[5].getDate()}–${weekDays[6].getDate()}`
+                        : weekDays[col.dayOffset]?.getDate()}
+                    </span>}
+                  </div>
+                  <span className="text-[10px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
+                    {(colTasks[col.id]||[]).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Cards */}
+              <div className="overflow-y-auto" style={{maxHeight:'calc(100vh - 220px)'}}>
+                {renderCards(col.id)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Swipe hint on mobile (first load only) */}
+    </div>
+  );
+}
+
+// ── Empty + Section head ────────────────────────────────────
+function SectionHead({ label, count }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-800/60 bg-zinc-950/80 sticky top-0 backdrop-blur-sm z-10">
+      <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</span>
+      <span className="text-[11px] font-semibold text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">{count}</span>
+    </div>
+  );
+}
+function Empty({ tab }) {
+  const m = {
+    waiting: { icon:'⏳', h:'Nothing in flight',     s:"Tasks where you're waiting on someone else." },
+    reading: { icon:'📚', h:'Reading list is empty', s:'Save articles, links, and newsletters here.' },
+  }[tab] || { icon:'📋', h:'Empty', s:'' };
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+      <span className="text-4xl mb-4 select-none">{m.icon}</span>
+      <p className="text-sm font-semibold text-zinc-300 mb-1.5">{m.h}</p>
+      <p className="text-xs text-zinc-600 leading-relaxed max-w-xs">{m.s}</p>
+    </div>
+  );
+}
+
+// ── App ─────────────────────────────────────────────────────
+function App() {
+  const [tasks,     setTasks]     = useState([]);
+  const [reading,   setReading]   = useState([]);
+  const [tab,       setTab]       = useState('week');
+  const [activeDay, setActiveDay] = useState(todayColIdx);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
+  const [showAdd,   setShowAdd]   = useState(false);
+  const weekDays = useMemo(()=>getWeekDays(),[]);
+
+  // ── Fetch
+  const load = useCallback(async()=>{
+    setLoading(true); setError(null);
+    try {
+      const [{data:t,error:te},{data:r,error:re}] = await Promise.all([
+        db.from('tasks').select('*').neq('status','done').order('sort_order',{ascending:true,nullsFirst:false}),
+        db.from('reading_list').select('*').order('created_at',{ascending:false}),
+      ]);
+      if(te) throw te; if(re) throw re;
+      setTasks(t||[]); setReading(r||[]);
+    } catch(e) { setError(e.message||'Connection error.'); }
+    finally { setLoading(false); }
+  },[]);
+  useEffect(()=>{load();},[load]);
+
+  // ── CRUD
+  const updateTask = useCallback(async(id,updates)=>{
+    setTasks(p=>p.map(t=>t.id===id?{...t,...updates}:t));
+    const {error}=await db.from('tasks').update(updates).eq('id',id);
+    if(error) load();
+  },[load]);
+
+  const markDone = useCallback(async(id)=>{
+    setTasks(p=>p.filter(t=>t.id!==id));
+    const {error}=await db.from('tasks').update({status:'done',completed_at:new Date().toISOString()}).eq('id',id);
+    if(error) load();
+  },[load]);
+
+  const addTask = useCallback(async(data)=>{
+    const {data:rows,error}=await db.from('tasks').insert([data]).select();
+    if(!error&&rows) setTasks(p=>[...p,rows[0]]);
+    else if(error) load();
+  },[load]);
+
+  const rescheduleTask = useCallback(async(taskId,colId)=>{
+    const newDate = colDate(colId, weekDays);
+    updateTask(taskId,{scheduled_date:newDate});
+  },[weekDays, updateTask]);
+
+  const markRead = useCallback(async(id)=>{
+    const now=new Date().toISOString();
+    setReading(p=>p.map(r=>r.id===id?{...r,read_at:now}:r));
+    await db.from('reading_list').update({read_at:now}).eq('id',id);
+  },[]);
+
+  // ── Derived
+  const waitingTasks = useMemo(()=>tasks.filter(t=>t.status==='waiting'),[tasks]);
+  const unreadCount  = useMemo(()=>reading.filter(r=>!r.read_at).length,[reading]);
+  const weekTaskCount= useMemo(()=>tasks.filter(t=>t.status!=='waiting').length,[tasks]);
+
+  const tabs = [
+    { id:'week',    label:'Week',    Icon:Ic.Week,    count:weekTaskCount },
+    { id:'waiting', label:'Waiting', Icon:Ic.Waiting, count:waitingTasks.length },
+    { id:'reading', label:'Reading', Icon:Ic.Reading, count:unreadCount },
+  ];
+
+  function renderContent() {
+    if(loading) return <div className="flex flex-col items-center justify-center h-full gap-3"><div className="w-6 h-6 rounded-full border-2 border-indigo-500 border-t-transparent spinner"/><p className="text-xs text-zinc-600">Loading…</p></div>;
+    if(error)   return <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-3"><p className="text-sm font-medium text-red-400">Connection error</p><p className="text-xs text-zinc-600">{error}</p><button onClick={load} className="text-xs text-indigo-400 border border-indigo-500/30 px-4 py-1.5 rounded-full">Retry</button></div>;
+
+    if(tab==='week') return (
+      <WeekView tasks={tasks} weekDays={weekDays}
+        onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask}
+        onAdd={addTask} activeDay={activeDay} setActiveDay={setActiveDay}/>
+    );
+    if(tab==='waiting') return waitingTasks.length===0 ? <Empty tab="waiting"/> : (
+      <div><SectionHead label="Waiting on" count={waitingTasks.length}/>
+        {waitingTasks.map(t=><TaskCard key={t.id} task={t} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} weekDays={weekDays}/>)}
+      </div>
+    );
+    if(tab==='reading') {
+      if(!reading.length) return <Empty tab="reading"/>;
+      const unread=reading.filter(r=>!r.read_at), read=reading.filter(r=>r.read_at);
+      return <div>
+        {unread.length>0&&<><SectionHead label="Unread" count={unread.length}/>{unread.map(r=><ReadingCard key={r.id} item={r} onMarkRead={markRead}/>)}</>}
+        {read.length>0&&<><SectionHead label="Read" count={read.length}/>{read.map(r=><ReadingCard key={r.id} item={r} onMarkRead={markRead}/>)}</>}
+        <div className="h-20"/>
+      </div>;
+    }
+  }
+
+  // Active day column id (for modal default)
+  const activeDayColId = WEEK_COLS[activeDay]?.id || 'beyond';
+
+  return (
+    <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
+
+      {/* Header */}
+      <header className="flex-shrink-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 pt-safe">
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 16 16" className="text-indigo-500">
+                <rect x="0" y="11" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.35"/>
+                <rect x="0" y="6.75" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.65"/>
+                <rect x="0" y="2.5" width="16" height="2.5" rx="1.25" fill="currentColor"/>
+              </svg>
+              <span className="text-sm font-bold text-zinc-100 tracking-tight">Bedrock</span>
+            </div>
+            <p className="text-[11px] text-zinc-600 mt-0.5 ml-6">{fmtHeader()}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {weekTaskCount>0&&<div className="text-right"><span className="text-xl font-bold text-zinc-100">{weekTaskCount}</span><p className="text-[10px] text-zinc-600 -mt-0.5">tasks</p></div>}
+            {unreadCount>0&&<div className="text-right"><span className="text-xl font-bold text-zinc-100">{unreadCount}</span><p className="text-[10px] text-zinc-600 -mt-0.5">unread</p></div>}
+          </div>
+        </div>
+
+        {/* Desktop tabs */}
+        <div className="hidden sm:flex items-center gap-0.5 px-3 pb-3">
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              className={`tab-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                ${tab===t.id?'bg-zinc-800 text-zinc-100':'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}>
+              <t.Icon/>{t.label}
+              {t.count>0&&<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tab===t.id?'bg-indigo-500/25 text-indigo-400':'bg-zinc-800 text-zinc-600'}`}>{t.count}</span>}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 overflow-hidden" key={tab}>{renderContent()}</main>
+
+      {/* Mobile bottom nav */}
+      <nav className="sm:hidden flex-shrink-0 border-t border-zinc-800/50 bg-zinc-950/95 backdrop-blur-md pb-safe">
+        <div className="flex">
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              className={`tab-btn flex-1 flex flex-col items-center gap-1 pt-3 pb-2 transition-colors ${tab===t.id?'text-indigo-400':'text-zinc-600'}`}>
+              <div className="relative">
+                <t.Icon/>
+                {t.count>0&&<span className="absolute -top-1.5 -right-2.5 bg-indigo-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{t.count>9?'9+':t.count}</span>}
+              </div>
+              <span className="text-[10px] font-medium">{t.label}</span>
+              {tab===t.id&&<span className="w-1 h-1 rounded-full bg-indigo-500"/>}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {/* FAB */}
+      <button onClick={()=>setShowAdd(true)}
+        className="fixed z-40 bottom-[76px] right-4 sm:bottom-6 sm:right-6 w-12 h-12 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-900/50 flex items-center justify-center transition-all active:scale-95"
+        aria-label="Add task"><Ic.Plus/></button>
+
+      {showAdd&&<AddTaskModal onClose={()=>setShowAdd(false)} onAdd={addTask} defaultColId={tab==='week'?activeDayColId:'beyond'} weekDays={weekDays}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
