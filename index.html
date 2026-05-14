@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Bedrock" />
-  <meta name="theme-color" content="#09090b" />
+  <meta name="theme-color" content="#f2ede6" />
   <title>Bedrock</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -16,20 +16,48 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } } };
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+          colors: {
+            taupe: {
+              50:  '#faf8f5',
+              100: '#f2ede6',
+              200: '#e5ddd3',
+              300: '#d4c9bc',
+              400: '#b8a898',
+              500: '#9d8c7a',
+              600: '#7d6e5e',
+            },
+            sage: {
+              50:  '#f3f6f1',
+              100: '#e4ece1',
+              200: '#c7d9c2',
+              300: '#a3c09b',
+              400: '#7aa370',
+              500: '#5d8754',
+              600: '#4a6e42',  // main sage accent
+              700: '#3a5733',  // darker sage / forest
+              800: '#2b4126',
+            },
+          }
+        }
+      }
+    };
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; }
     body {
-      background: #09090b; color: #fafafa;
+      background: #f2ede6; color: #1c1917;
       font-family: 'Inter', -apple-system, system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
       overscroll-behavior: none;
     }
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { background: #d4c9bc; border-radius: 2px; }
 
     @keyframes fadeSlideUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes fadeIn      { from { opacity:0; } to { opacity:1; } }
@@ -42,15 +70,15 @@
     .spinner    { animation: spin 0.8s linear infinite; }
 
     .task-card  { transition: background 0.1s ease; }
-    .task-card:active { background: #1c1c1f; }
+    .task-card:active { background: #f2ede6; }
     .tab-btn    { transition: color 0.12s ease, background 0.12s ease; }
 
     .check-circle {
-      width:20px; height:20px; border:1.5px solid #3f3f46; border-radius:50%;
+      width:20px; height:20px; border:1.5px solid #d4c9bc; border-radius:50%;
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
       transition:border-color 0.15s, background 0.15s; cursor:pointer;
     }
-    .check-circle:hover { border-color:#6366f1; background:rgba(99,102,241,0.12); }
+    .check-circle:hover { border-color:#4a6e42; background:rgba(74,110,66,0.08); }
 
     /* Mobile week slider */
     .week-slider-wrap { overflow:hidden; flex:1; }
@@ -63,21 +91,19 @@
 
     /* Desktop kanban */
     .kanban-wrap { display:flex; gap:12px; overflow-x:auto; padding:12px 16px 80px; height:100%; align-items:flex-start; }
-    .kanban-col  { min-width:240px; width:240px; flex-shrink:0; border-radius:12px; background:#111113; border:1px solid #27272a; overflow:hidden; }
-    .kanban-col.drag-over-col { border-color:#6366f1; box-shadow:0 0 0 1px #6366f1; }
+    .kanban-col  { min-width:210px; width:210px; flex-shrink:0; border-radius:10px; background:#fff; border:1px solid #e5ddd3; overflow:hidden; }
+    .kanban-col.drag-over-col { border-color:#4a6e42; box-shadow:0 0 0 1px #4a6e42; }
+
+    /* Inbox panel (desktop sticky left) */
+    .inbox-panel { width:256px; flex-shrink:0; border-right:1px solid #e5ddd3; background:#faf8f5; display:flex; flex-direction:column; overflow:hidden; }
+    .inbox-panel.drag-over { box-shadow:inset 2px 0 0 #4a6e42; }
 
     /* Safe area */
     .pb-safe { padding-bottom:max(env(safe-area-inset-bottom,0px),8px); }
     .pt-safe  { padding-top:env(safe-area-inset-top,0px); }
 
     /* Date input */
-    input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(0.5); cursor:pointer; }
-
-    /* Today highlight on day pill */
-    .today-pill { background:#6366f1 !important; color:#fff !important; }
-
-    /* Beyond infinity symbol */
-    .beyond-glyph { font-size:14px; line-height:1; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(0.3) sepia(0.2); cursor:pointer; }
   </style>
 </head>
 <body>
@@ -92,11 +118,11 @@ const db = createClient(
 
 // ── Source config ───────────────────────────────────────────
 const SRC = {
-  personal:   { label:'Personal',   pill:'bg-blue-500/15 text-blue-400',       dot:'bg-blue-500'     },
-  earlehouse: { label:'Earlehouse', pill:'bg-violet-500/15 text-violet-400',   dot:'bg-violet-500'   },
-  rise8:      { label:'Rise8',      pill:'bg-emerald-500/15 text-emerald-400', dot:'bg-emerald-500'  },
-  imessage:   { label:'iMessage',   pill:'bg-green-500/15 text-green-400',     dot:'bg-green-500'    },
-  manual:     { label:'Manual',     pill:'bg-zinc-700/60 text-zinc-400',       dot:'bg-zinc-500'     },
+  personal:   { label:'Personal',   pill:'bg-blue-100 text-blue-700',       dot:'bg-blue-500'   },
+  earlehouse: { label:'Earlehouse', pill:'bg-violet-100 text-violet-700',   dot:'bg-violet-500' },
+  rise8:      { label:'Rise8',      pill:'bg-emerald-100 text-emerald-700', dot:'bg-emerald-500'},
+  imessage:   { label:'iMessage',   pill:'bg-green-100 text-green-700',   dot:'bg-green-500' },
+  manual:     { label:'Manual',     pill:'bg-stone-200 text-stone-500',     dot:'bg-stone-400'  },
 };
 const SRC_OPTIONS = [
   { value:'',           label:'— none —'   },
@@ -108,21 +134,23 @@ const SRC_OPTIONS = [
 ];
 
 const PRI = {
-  1: { dot:'bg-red-500',   label:'🔴 High'   },
+  1: { dot:'bg-red-400',   label:'🔴 High'   },
   2: { dot:'bg-amber-400', label:'🟡 Medium' },
-  3: { dot:'bg-zinc-600',  label:'⚪ Low'    },
+  3: { dot:'bg-stone-300', label:'⚪ Low'    },
 };
 
 // ── Week helpers ────────────────────────────────────────────
+// Index 0 = inbox (To Process), 1–5 = Mon–Fri, 6 = Weekend
 const WEEK_COLS = [
-  { id:'mon',     label:'Mon',     short:'M',  dayOffset:0 },
-  { id:'tue',     label:'Tue',     short:'T',  dayOffset:1 },
-  { id:'wed',     label:'Wed',     short:'W',  dayOffset:2 },
-  { id:'thu',     label:'Thu',     short:'Th', dayOffset:3 },
-  { id:'fri',     label:'Fri',     short:'F',  dayOffset:4 },
-  { id:'weekend', label:'Weekend', short:'Wk', dayOffset:5 },
-  { id:'beyond',  label:'Beyond',  short:'∞',  dayOffset:null },
+  { id:'inbox',   label:'To Process', short:'≡',  dayOffset:null, isInbox:true },
+  { id:'mon',     label:'Mon',        short:'M',  dayOffset:0 },
+  { id:'tue',     label:'Tue',        short:'T',  dayOffset:1 },
+  { id:'wed',     label:'Wed',        short:'W',  dayOffset:2 },
+  { id:'thu',     label:'Thu',        short:'Th', dayOffset:3 },
+  { id:'fri',     label:'Fri',        short:'F',  dayOffset:4 },
+  { id:'weekend', label:'Weekend',    short:'Wk', dayOffset:5 },
 ];
+const DAY_COLS = WEEK_COLS.filter(c => !c.isInbox);
 
 function getWeekDays() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -135,14 +163,14 @@ function getWeekDays() {
 function dateStr(d) { return d ? d.toISOString().split('T')[0] : null; }
 
 function colDate(colId, weekDays) {
-  if (colId === 'beyond') return null;
+  if (colId === 'inbox') return null;
   if (colId === 'weekend') return dateStr(weekDays[5]);
   const idx = {mon:0,tue:1,wed:2,thu:3,fri:4}[colId];
   return idx !== undefined ? dateStr(weekDays[idx]) : null;
 }
 
 function taskColId(task, weekDays) {
-  if (!task.scheduled_date) return 'beyond';
+  if (!task.scheduled_date) return 'inbox';
   const wStrs = weekDays.map(dateStr);
   const idx = wStrs.indexOf(task.scheduled_date);
   if (idx === 0) return 'mon';
@@ -151,13 +179,13 @@ function taskColId(task, weekDays) {
   if (idx === 3) return 'thu';
   if (idx === 4) return 'fri';
   if (idx === 5 || idx === 6) return 'weekend';
-  return 'beyond';
+  return 'inbox';
 }
 
 function todayColIdx() {
   const dow = new Date().getDay();
-  if (dow === 0 || dow === 6) return 5;
-  return dow - 1;
+  if (dow === 0 || dow === 6) return 6; // weekend at index 6
+  return dow; // mon=1, tue=2, wed=3, thu=4, fri=5
 }
 
 function fmtDue(d) {
@@ -180,15 +208,13 @@ const Ic = {
   X:       ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>,
   ChevD:   ()=><svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M4.22 6.22a.75.75 0 011.06 0L8 8.94l2.72-2.72a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L4.22 7.28a.75.75 0 010-1.06z"/></svg>,
   ChevU:   ()=><svg viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M11.78 9.78a.75.75 0 01-1.06 0L8 7.06 5.28 9.78a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06z"/></svg>,
-  ChevL:   ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd"/></svg>,
-  ChevR:   ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd"/></svg>,
   Week:    ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd"/></svg>,
   Waiting: ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd"/></svg>,
   Reading: ()=><svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.506 7.506 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z"/></svg>,
 };
 
 // ── TaskCard ────────────────────────────────────────────────
-function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, dragHandlers, isDragOver }) {
+function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, dragHandlers }) {
   const [open, setOpen] = useState(false);
   const due = fmtDue(task.due_date);
   const src = task.source_account ? SRC[task.source_account] : null;
@@ -197,44 +223,42 @@ function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, d
   function qa(updates, e) { e.stopPropagation(); onUpdate(task.id, updates); setOpen(false); }
 
   return (
-    <div className={`task-card border-b border-zinc-800/60 ${isDragOver ? 'border-t-2 border-t-indigo-500' : ''}`} {...(dragHandlers||{})}>
+    <div className="task-card border-b border-taupe-200/60" {...(dragHandlers||{})}>
       <div className="flex items-start gap-3 px-3 py-3 cursor-pointer" onClick={()=>setOpen(o=>!o)}>
-        {draggable && <div className="hidden sm:flex mt-1 flex-shrink-0 opacity-25 cursor-grab"><svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"/></svg></div>}
+        {draggable && <div className="hidden sm:flex mt-1 flex-shrink-0 opacity-20 cursor-grab"><svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-stone-400"><path d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"/></svg></div>}
         <div className="check-circle mt-0.5" onClick={e=>{e.stopPropagation();onDone(task.id);}}>
-          <span className="opacity-0 group-hover:opacity-100 text-indigo-400"><Ic.Check /></span>
+          <span className="text-sage-600 opacity-0 hover:opacity-100"><Ic.Check /></span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
             {task.priority && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5 ${PRI[task.priority]?.dot}`}/>}
-            <p className="text-sm text-zinc-100 leading-snug">{task.title}</p>
+            <p className="text-sm text-stone-800 leading-snug">{task.title}</p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 mt-1">
             {src && <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}><span className={`w-1.5 h-1.5 rounded-full ${src.dot}`}/>{src.label}</span>}
-            {due && <span className={`text-[10px] font-medium ${due.over?'text-red-400':'text-zinc-500'}`}>{due.over?'⚠ ':''}{due.str}</span>}
-            {task.waiting_on && <span className="text-[10px] text-amber-400/80">⏳ {task.waiting_on}</span>}
+            {due && <span className={`text-[10px] font-medium ${due.over?'text-red-500':'text-stone-400'}`}>{due.over?'⚠ ':''}{due.str}</span>}
+            {task.waiting_on && <span className="text-[10px] text-amber-600/80">⏳ {task.waiting_on}</span>}
           </div>
         </div>
-        <div className="text-zinc-600 flex-shrink-0 mt-0.5">{open?<Ic.ChevU/>:<Ic.ChevD/>}</div>
+        <div className="text-stone-300 flex-shrink-0 mt-0.5">{open?<Ic.ChevU/>:<Ic.ChevD/>}</div>
       </div>
 
       {open && (
         <div className="px-3 pb-3 ml-9 anim-item" onClick={e=>e.stopPropagation()}>
-          {task.notes && <p className="text-xs text-zinc-400 leading-relaxed mb-3 whitespace-pre-wrap border-l-2 border-zinc-700 pl-3">{task.notes}</p>}
+          {task.notes && <p className="text-xs text-stone-500 leading-relaxed mb-3 whitespace-pre-wrap border-l-2 border-taupe-200 pl-3">{task.notes}</p>}
 
-          {/* Done / status actions */}
           <div className="flex flex-wrap gap-1.5 mb-2.5">
-            <button onClick={e=>{e.stopPropagation();onDone(task.id);}} className="text-xs font-medium bg-zinc-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-zinc-300 px-3 py-1.5 rounded-full transition-colors">✓ Done</button>
-            {task.status !== 'waiting' && <button onClick={e=>qa({status:'waiting'},e)} className="text-xs font-medium bg-zinc-800 hover:bg-amber-500/20 hover:text-amber-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors">⏳ Waiting</button>}
-            {task.status === 'waiting' && <button onClick={e=>qa({status:'active'},e)} className="text-xs font-medium bg-zinc-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-zinc-400 px-3 py-1.5 rounded-full transition-colors">↑ Active</button>}
+            <button onClick={e=>{e.stopPropagation();onDone(task.id);}} className="text-xs font-medium bg-taupe-100 hover:bg-sage-100 hover:text-sage-700 text-stone-500 px-3 py-1.5 rounded-full transition-colors">✓ Done</button>
+            {task.status !== 'waiting' && <button onClick={e=>qa({status:'waiting'},e)} className="text-xs font-medium bg-taupe-100 hover:bg-amber-100 hover:text-amber-700 text-stone-400 px-3 py-1.5 rounded-full transition-colors">⏳ Waiting</button>}
+            {task.status === 'waiting'  && <button onClick={e=>qa({status:'active'},e)}  className="text-xs font-medium bg-taupe-100 hover:bg-sage-100 hover:text-sage-700 text-stone-400 px-3 py-1.5 rounded-full transition-colors">↑ Active</button>}
           </div>
 
-          {/* Move to day */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] text-zinc-600 font-medium uppercase tracking-wide mr-0.5">Move to</span>
+            <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wide mr-0.5">Move to</span>
             {WEEK_COLS.map(col => col.id === currentCol ? null : (
               <button key={col.id} onClick={e=>{e.stopPropagation();onReschedule(task.id,col.id);setOpen(false);}}
-                className="text-[10px] font-medium bg-zinc-800 hover:bg-indigo-500/20 hover:text-indigo-400 text-zinc-400 px-2 py-1 rounded-full transition-colors">
-                {col.id==='beyond'?'∞ Beyond':col.label}
+                className="text-[10px] font-medium bg-taupe-100 hover:bg-sage-100 hover:text-sage-700 text-stone-400 px-2 py-1 rounded-full transition-colors">
+                {col.id==='inbox' ? '≡ Inbox' : col.label}
               </button>
             ))}
           </div>
@@ -249,25 +273,25 @@ function ReadingCard({ item, onMarkRead }) {
   const src = item.source_account ? SRC[item.source_account] : null;
   let host=''; try { host=new URL(item.url).hostname.replace(/^www\./,''); } catch(_){}
   return (
-    <div className={`task-card flex items-start gap-3 px-4 py-3.5 border-b border-zinc-800/60 ${item.read_at?'opacity-35':''}`}>
+    <div className={`task-card flex items-start gap-3 px-4 py-3.5 border-b border-taupe-200/60 ${item.read_at?'opacity-40':''}`}>
       <div className="flex-1 min-w-0">
         <a href={item.url} target="_blank" rel="noopener noreferrer" onClick={()=>!item.read_at&&onMarkRead(item.id)}
-          className="block text-sm text-zinc-100 hover:text-indigo-400 leading-snug mb-1.5 transition-colors">
+          className="block text-sm text-stone-800 hover:text-sage-700 leading-snug mb-1.5 transition-colors">
           {item.title||item.url}
         </a>
         <div className="flex items-center gap-2">
           {src && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}>{src.label}</span>}
-          {host && <span className="text-[10px] text-zinc-600 truncate">{host}</span>}
+          {host && <span className="text-[10px] text-stone-400 truncate">{host}</span>}
         </div>
       </div>
-      {!item.read_at && <button onClick={()=>onMarkRead(item.id)} className="flex-shrink-0 text-[10px] font-medium text-zinc-500 hover:text-emerald-400 bg-zinc-800 hover:bg-emerald-500/10 px-2.5 py-1.5 rounded-full transition-colors mt-0.5">✓ Read</button>}
+      {!item.read_at && <button onClick={()=>onMarkRead(item.id)} className="flex-shrink-0 text-[10px] font-medium text-stone-400 hover:text-sage-700 bg-taupe-100 hover:bg-sage-100 px-2.5 py-1.5 rounded-full transition-colors mt-0.5">✓ Read</button>}
     </div>
   );
 }
 
 // ── AddTaskModal ────────────────────────────────────────────
 function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
-  const defaultDate = defaultColId && defaultColId !== 'beyond' ? colDate(defaultColId, weekDays) : '';
+  const defaultDate = defaultColId && defaultColId !== 'inbox' ? colDate(defaultColId, weekDays) : '';
   const [form, setForm] = useState({
     title:'', notes:'', status:'active', priority:2,
     due_date:'', waiting_on:'', source_account:'',
@@ -297,29 +321,28 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center anim-fade bg-black/60 backdrop-blur-sm" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="relative w-full sm:max-w-md bg-zinc-900 border border-zinc-800 sm:rounded-2xl rounded-t-2xl shadow-2xl anim-modal pb-safe">
-        <div className="flex justify-center pt-3 sm:hidden"><div className="w-10 h-1 bg-zinc-700 rounded-full"/></div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center anim-fade bg-stone-800/30 backdrop-blur-sm" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="relative w-full sm:max-w-md bg-white border border-taupe-200 sm:rounded-2xl rounded-t-2xl shadow-xl shadow-stone-900/10 anim-modal pb-safe">
+        <div className="flex justify-center pt-3 sm:hidden"><div className="w-10 h-1 bg-taupe-200 rounded-full"/></div>
         <div className="px-5 pt-4 pb-6 sm:pt-5">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-zinc-100">New task</h2>
-            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"><Ic.X/></button>
+            <h2 className="text-base font-semibold text-stone-800">New task</h2>
+            <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors p-1"><Ic.X/></button>
           </div>
           <form onSubmit={submit} className="space-y-3.5">
             <input ref={titleRef} type="text" placeholder="What needs to get done?"
               value={form.title} onChange={e=>set('title',e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70"/>
+              className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-sage-500/60"/>
             <textarea placeholder="Notes (optional)" value={form.notes} onChange={e=>set('notes',e.target.value)} rows={3}
-              className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/70 resize-none"/>
+              className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-sage-500/60 resize-none"/>
 
-            {/* Schedule for + Priority */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Schedule for</label>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Schedule for</label>
                 <select value={form.scheduled_date} onChange={e=>set('scheduled_date',e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
-                  <option value="">Beyond</option>
-                  {WEEK_COLS.filter(c=>c.id!=='beyond').map(col=>{
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
+                  <option value="">To Process</option>
+                  {DAY_COLS.map(col=>{
                     const d = colDate(col.id, weekDays);
                     const label = col.id==='weekend'
                       ? `Weekend (${new Date(weekDays[5]).toLocaleDateString('en-US',{month:'numeric',day:'numeric'})})`
@@ -329,9 +352,9 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Priority</label>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Priority</label>
                 <select value={form.priority} onChange={e=>set('priority',Number(e.target.value))}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
                   <option value={1}>🔴 High</option>
                   <option value={2}>🟡 Medium</option>
                   <option value={3}>⚪ Low</option>
@@ -339,31 +362,29 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
               </div>
             </div>
 
-            {/* Due date + Waiting on */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Due date</label>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Due date</label>
                 <input type="date" value={form.due_date} onChange={e=>set('due_date',e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70"/>
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60"/>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Waiting on</label>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Waiting on</label>
                 <input type="text" placeholder="Person…" value={form.waiting_on} onChange={e=>set('waiting_on',e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/70"/>
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 placeholder:text-stone-300 focus:outline-none focus:border-sage-500/60"/>
               </div>
             </div>
 
-            {/* Source */}
             <div>
-              <label className="block text-[11px] font-medium text-zinc-500 mb-1.5 uppercase tracking-wide">Source</label>
+              <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Source</label>
               <select value={form.source_account} onChange={e=>set('source_account',e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700/60 rounded-xl px-3 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/70 cursor-pointer">
+                className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
                 {SRC_OPTIONS.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
 
             <button type="submit" disabled={!form.title.trim()||saving}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 text-white font-semibold text-sm rounded-xl py-3 transition-colors">
+              className="w-full bg-sage-600 hover:bg-sage-700 active:bg-sage-800 disabled:opacity-40 text-white font-semibold text-sm rounded-xl py-3 transition-colors">
               {saving?'Adding…':'Add task'}
             </button>
           </form>
@@ -374,24 +395,21 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
 }
 
 // ── WeekView ────────────────────────────────────────────────
-function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, activeDay, setActiveDay }) {
+function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, setActiveDay }) {
   const touchStartX = useRef(null);
-  const [draggedId, setDraggedId]   = useState(null);
+  const [draggedId,   setDraggedId]   = useState(null);
   const [colDragOver, setColDragOver] = useState(null);
 
-  // Group tasks by column
   const colTasks = useMemo(()=>{
     const groups = Object.fromEntries(WEEK_COLS.map(c=>[c.id,[]]));
     tasks.filter(t=>t.status!=='waiting').forEach(t=>{
       const col = taskColId(t, weekDays);
-      (groups[col]||groups.beyond).push(t);
+      (groups[col]||groups.inbox).push(t);
     });
-    // sort each column by priority then sort_order
     Object.values(groups).forEach(arr=>arr.sort((a,b)=>(a.priority??2)-(b.priority??2)||(a.sort_order??9999)-(b.sort_order??9999)));
     return groups;
   },[tasks, weekDays]);
 
-  // Touch swipe
   function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
     if (touchStartX.current === null) return;
@@ -403,35 +421,30 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, acti
     touchStartX.current = null;
   }
 
-  // Desktop drag between columns
   function onCardDragStart(e, taskId) { setDraggedId(taskId); e.dataTransfer.effectAllowed='move'; }
   function onColDragOver(e, colId)    { e.preventDefault(); setColDragOver(colId); }
-  function onColDrop(e, colId)        {
-    e.preventDefault();
-    if (draggedId) onReschedule(draggedId, colId);
-    setDraggedId(null); setColDragOver(null);
-  }
-  function onDragEnd() { setDraggedId(null); setColDragOver(null); }
-
-  // Column header date label
-  function colDateLabel(col) {
-    if (col.id==='beyond') return '';
-    if (col.id==='weekend') return `${weekDays[5].getDate()}–${weekDays[6].getDate()}`;
-    return weekDays[col.dayOffset].getDate();
-  }
+  function onColDrop(e, colId)        { e.preventDefault(); if (draggedId) onReschedule(draggedId, colId); setDraggedId(null); setColDragOver(null); }
+  function onDragEnd()                { setDraggedId(null); setColDragOver(null); }
 
   function isToday(col) {
-    if (col.id==='beyond') return false;
+    if (col.isInbox) return false;
     const today = new Date(); today.setHours(0,0,0,0);
     if (col.id==='weekend') return today.toDateString()===weekDays[5].toDateString()||today.toDateString()===weekDays[6].toDateString();
     return weekDays[col.dayOffset]?.toDateString()===today.toDateString();
   }
 
-  // Shared card renderer
+  function colDateLabel(col) {
+    if (col.isInbox) return '';
+    if (col.id==='weekend') return `${weekDays[5].getDate()}–${weekDays[6].getDate()}`;
+    return weekDays[col.dayOffset].getDate();
+  }
+
   function renderCards(colId) {
     const list = colTasks[colId]||[];
     if (!list.length) return (
-      <div className="px-4 py-6 text-center text-xs text-zinc-700">Nothing scheduled</div>
+      <div className="px-4 py-8 text-center text-xs text-taupe-300">
+        {colId==='inbox' ? 'All clear ✓' : 'Nothing scheduled'}
+      </div>
     );
     return list.map(task=>(
       <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDone={onDone}
@@ -440,20 +453,17 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, acti
           draggable:true,
           onDragStart:e=>onCardDragStart(e,task.id),
           onDragEnd,
-          className: draggedId===task.id?'opacity-40':'',
+          style: draggedId===task.id?{opacity:0.4}:{},
         }}
       />
     ));
   }
 
-  // ── Mobile ────────────────────────────────────────────────
-  const isMobile = typeof window!=='undefined' && window.innerWidth < 640;
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
-      {/* Day pills */}
-      <div className="flex-shrink-0 flex items-center gap-0.5 overflow-x-auto px-3 pt-2 pb-1" style={{scrollbarWidth:'none'}}>
+      {/* Mobile day pills */}
+      <div className="sm:hidden flex-shrink-0 flex items-center gap-0.5 overflow-x-auto px-3 pt-2 pb-1" style={{scrollbarWidth:'none'}}>
         {WEEK_COLS.map((col,i)=>{
           const active = activeDay===i;
           const today  = isToday(col);
@@ -461,35 +471,31 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, acti
           return (
             <button key={col.id} onClick={()=>setActiveDay(i)}
               className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl min-w-[36px] transition-colors
-                ${active ? (today?'bg-indigo-600 text-white':'bg-zinc-800 text-zinc-100') : (today?'text-indigo-400':'text-zinc-600')}`}>
+                ${active ? (today?'bg-sage-600 text-white':'bg-taupe-200 text-stone-700') : (today?'text-sage-600':'text-stone-400')}`}>
               <span className="text-[11px] font-bold">{col.short}</span>
-              {col.id!=='beyond' && <span className="text-[10px] opacity-70">{colDateLabel(col)}</span>}
-              {col.id==='beyond' && <span className="text-[10px] beyond-glyph opacity-50"></span>}
-              <span className={`w-1 h-1 rounded-full transition-colors ${count>0?(active?'bg-white/60':'bg-indigo-500'):'bg-transparent'}`}/>
+              {!col.isInbox && <span className="text-[10px] opacity-70">{colDateLabel(col)}</span>}
+              {col.isInbox  && <span className="text-[10px] opacity-40">—</span>}
+              <span className={`w-1 h-1 rounded-full ${count>0?(active?'bg-white/60':'bg-sage-500'):'bg-transparent'}`}/>
             </button>
           );
         })}
       </div>
 
-      {/* ── Mobile: swipeable slides ──────────────────────── */}
-      <div className="sm:hidden flex-1 overflow-hidden week-slider-wrap"
-        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Mobile swipeable slides */}
+      <div className="sm:hidden flex-1 overflow-hidden week-slider-wrap" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="week-slider h-full" style={{transform:`translateX(-${activeDay*100}%)`}}>
           {WEEK_COLS.map(col=>(
             <div key={col.id} className="week-slide">
-              {/* Column label */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 sticky top-0 bg-zinc-950/95 backdrop-blur-sm">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-taupe-200 sticky top-0 bg-taupe-100/95 backdrop-blur-sm">
                 <div>
-                  <span className="text-sm font-semibold text-zinc-200">{col.label}</span>
-                  {col.id!=='beyond' && <span className="text-xs text-zinc-600 ml-2">
+                  <span className="text-sm font-semibold text-stone-700">{col.label}</span>
+                  {!col.isInbox && <span className="text-xs text-stone-400 ml-2">
                     {col.id==='weekend'
                       ? `${weekDays[5].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${weekDays[6].toLocaleDateString('en-US',{day:'numeric'})}`
                       : weekDays[col.dayOffset]?.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
                   </span>}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-600">{(colTasks[col.id]||[]).length} tasks</span>
-                </div>
+                <span className="text-xs text-stone-400">{(colTasks[col.id]||[]).length}</span>
               </div>
               <div className="overflow-y-auto" style={{height:'calc(100% - 44px)'}}>
                 {renderCards(col.id)}
@@ -500,53 +506,62 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, onAdd, acti
         </div>
       </div>
 
-      {/* ── Desktop: kanban columns ───────────────────────── */}
-      <div className="hidden sm:block flex-1 overflow-hidden">
-        <div className="kanban-wrap">
-          {WEEK_COLS.map(col=>(
-            <div key={col.id}
-              className={`kanban-col ${colDragOver===col.id&&draggedId?'drag-over-col':''}`}
-              onDragOver={e=>onColDragOver(e,col.id)}
-              onDrop={e=>onColDrop(e,col.id)}
-              onDragLeave={()=>setColDragOver(null)}>
+      {/* Desktop: inbox panel + scrollable day kanban */}
+      <div className="hidden sm:flex flex-1 overflow-hidden">
 
-              {/* Column header */}
-              <div className={`px-3 py-2.5 border-b border-zinc-800 ${isToday(col)?'bg-indigo-600/10':''}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isToday(col)?'text-indigo-400':'text-zinc-400'}`}>{col.label}</span>
-                    {col.id!=='beyond' && <span className="text-[11px] text-zinc-600">
-                      {col.id==='weekend'
-                        ? `${weekDays[5].getDate()}–${weekDays[6].getDate()}`
-                        : weekDays[col.dayOffset]?.getDate()}
-                    </span>}
+        {/* Inbox — sticky left */}
+        <div
+          className={`inbox-panel ${colDragOver==='inbox'&&draggedId?'drag-over':''}`}
+          onDragOver={e=>onColDragOver(e,'inbox')}
+          onDrop={e=>onColDrop(e,'inbox')}
+          onDragLeave={()=>setColDragOver(null)}>
+          <div className="px-4 py-3 border-b border-taupe-200 flex items-center gap-2 flex-shrink-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">To Process</span>
+            <span className="text-[10px] text-stone-400 bg-taupe-200 px-1.5 py-0.5 rounded font-medium">{(colTasks.inbox||[]).length}</span>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {renderCards('inbox')}
+          </div>
+        </div>
+
+        {/* Day columns */}
+        <div className="flex-1 overflow-hidden">
+          <div className="kanban-wrap">
+            {DAY_COLS.map(col=>(
+              <div key={col.id}
+                className={`kanban-col ${colDragOver===col.id&&draggedId?'drag-over-col':''}`}
+                onDragOver={e=>onColDragOver(e,col.id)}
+                onDrop={e=>onColDrop(e,col.id)}
+                onDragLeave={()=>setColDragOver(null)}>
+                <div className={`px-3 py-2.5 border-b border-taupe-200/60 ${isToday(col)?'bg-sage-50':''}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className={`text-xs font-bold uppercase tracking-wider ${isToday(col)?'text-sage-600':'text-stone-400'}`}>{col.label}</span>
+                      <span className="text-[11px] text-stone-300">
+                        {col.id==='weekend' ? `${weekDays[5].getDate()}–${weekDays[6].getDate()}` : weekDays[col.dayOffset]?.getDate()}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-stone-400 bg-taupe-100 px-1.5 py-0.5 rounded">{(colTasks[col.id]||[]).length}</span>
                   </div>
-                  <span className="text-[10px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
-                    {(colTasks[col.id]||[]).length}
-                  </span>
+                </div>
+                <div className="overflow-y-auto" style={{maxHeight:'calc(100vh - 200px)'}}>
+                  {renderCards(col.id)}
                 </div>
               </div>
-
-              {/* Cards */}
-              <div className="overflow-y-auto" style={{maxHeight:'calc(100vh - 220px)'}}>
-                {renderCards(col.id)}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Swipe hint on mobile (first load only) */}
     </div>
   );
 }
 
-// ── Empty + Section head ────────────────────────────────────
+// ── SectionHead + Empty ─────────────────────────────────────
 function SectionHead({ label, count }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-800/60 bg-zinc-950/80 sticky top-0 backdrop-blur-sm z-10">
-      <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">{label}</span>
-      <span className="text-[11px] font-semibold text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">{count}</span>
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-taupe-200/60 bg-taupe-50/80 sticky top-0 backdrop-blur-sm z-10">
+      <span className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">{label}</span>
+      <span className="text-[11px] font-semibold text-stone-500 bg-taupe-200 px-1.5 py-0.5 rounded">{count}</span>
     </div>
   );
 }
@@ -558,8 +573,8 @@ function Empty({ tab }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
       <span className="text-4xl mb-4 select-none">{m.icon}</span>
-      <p className="text-sm font-semibold text-zinc-300 mb-1.5">{m.h}</p>
-      <p className="text-xs text-zinc-600 leading-relaxed max-w-xs">{m.s}</p>
+      <p className="text-sm font-semibold text-stone-600 mb-1.5">{m.h}</p>
+      <p className="text-xs text-stone-400 leading-relaxed max-w-xs">{m.s}</p>
     </div>
   );
 }
@@ -575,7 +590,6 @@ function App() {
   const [showAdd,   setShowAdd]   = useState(false);
   const weekDays = useMemo(()=>getWeekDays(),[]);
 
-  // ── Fetch
   const load = useCallback(async()=>{
     setLoading(true); setError(null);
     try {
@@ -590,7 +604,6 @@ function App() {
   },[]);
   useEffect(()=>{load();},[load]);
 
-  // ── CRUD
   const updateTask = useCallback(async(id,updates)=>{
     setTasks(p=>p.map(t=>t.id===id?{...t,...updates}:t));
     const {error}=await db.from('tasks').update(updates).eq('id',id);
@@ -610,8 +623,7 @@ function App() {
   },[load]);
 
   const rescheduleTask = useCallback(async(taskId,colId)=>{
-    const newDate = colDate(colId, weekDays);
-    updateTask(taskId,{scheduled_date:newDate});
+    updateTask(taskId,{scheduled_date: colDate(colId, weekDays)});
   },[weekDays, updateTask]);
 
   const markRead = useCallback(async(id)=>{
@@ -620,10 +632,9 @@ function App() {
     await db.from('reading_list').update({read_at:now}).eq('id',id);
   },[]);
 
-  // ── Derived
-  const waitingTasks = useMemo(()=>tasks.filter(t=>t.status==='waiting'),[tasks]);
-  const unreadCount  = useMemo(()=>reading.filter(r=>!r.read_at).length,[reading]);
-  const weekTaskCount= useMemo(()=>tasks.filter(t=>t.status!=='waiting').length,[tasks]);
+  const waitingTasks  = useMemo(()=>tasks.filter(t=>t.status==='waiting'),[tasks]);
+  const unreadCount   = useMemo(()=>reading.filter(r=>!r.read_at).length,[reading]);
+  const weekTaskCount = useMemo(()=>tasks.filter(t=>t.status!=='waiting').length,[tasks]);
 
   const tabs = [
     { id:'week',    label:'Week',    Icon:Ic.Week,    count:weekTaskCount },
@@ -632,14 +643,9 @@ function App() {
   ];
 
   function renderContent() {
-    if(loading) return <div className="flex flex-col items-center justify-center h-full gap-3"><div className="w-6 h-6 rounded-full border-2 border-indigo-500 border-t-transparent spinner"/><p className="text-xs text-zinc-600">Loading…</p></div>;
-    if(error)   return <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-3"><p className="text-sm font-medium text-red-400">Connection error</p><p className="text-xs text-zinc-600">{error}</p><button onClick={load} className="text-xs text-indigo-400 border border-indigo-500/30 px-4 py-1.5 rounded-full">Retry</button></div>;
-
-    if(tab==='week') return (
-      <WeekView tasks={tasks} weekDays={weekDays}
-        onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask}
-        onAdd={addTask} activeDay={activeDay} setActiveDay={setActiveDay}/>
-    );
+    if(loading) return <div className="flex flex-col items-center justify-center h-full gap-3"><div className="w-6 h-6 rounded-full border-2 border-sage-500 border-t-transparent spinner"/><p className="text-xs text-stone-400">Loading…</p></div>;
+    if(error)   return <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-3"><p className="text-sm font-medium text-red-500">Connection error</p><p className="text-xs text-stone-400">{error}</p><button onClick={load} className="text-xs text-sage-700 border border-sage-400/40 px-4 py-1.5 rounded-full">Retry</button></div>;
+    if(tab==='week') return <WeekView tasks={tasks} weekDays={weekDays} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} activeDay={activeDay} setActiveDay={setActiveDay}/>;
     if(tab==='waiting') return waitingTasks.length===0 ? <Empty tab="waiting"/> : (
       <div><SectionHead label="Waiting on" count={waitingTasks.length}/>
         {waitingTasks.map(t=><TaskCard key={t.id} task={t} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} weekDays={weekDays}/>)}
@@ -656,71 +662,65 @@ function App() {
     }
   }
 
-  // Active day column id (for modal default)
-  const activeDayColId = WEEK_COLS[activeDay]?.id || 'beyond';
+  const activeDayColId = WEEK_COLS[activeDay]?.id || 'inbox';
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 overflow-hidden">
+    <div className="flex flex-col h-screen bg-taupe-100 overflow-hidden">
 
-      {/* Header */}
-      <header className="flex-shrink-0 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/50 pt-safe">
+      <header className="flex-shrink-0 bg-taupe-50/95 backdrop-blur-md border-b border-taupe-200 pt-safe">
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-indigo-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" className="text-sage-600">
                 <rect x="0" y="11" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.35"/>
                 <rect x="0" y="6.75" width="16" height="2.5" rx="1.25" fill="currentColor" opacity="0.65"/>
                 <rect x="0" y="2.5" width="16" height="2.5" rx="1.25" fill="currentColor"/>
               </svg>
-              <span className="text-sm font-bold text-zinc-100 tracking-tight">Bedrock</span>
+              <span className="text-sm font-bold text-stone-800 tracking-tight">Bedrock</span>
             </div>
-            <p className="text-[11px] text-zinc-600 mt-0.5 ml-6">{fmtHeader()}</p>
+            <p className="text-[11px] text-stone-400 mt-0.5 ml-6">{fmtHeader()}</p>
           </div>
           <div className="flex items-center gap-3">
-            {weekTaskCount>0&&<div className="text-right"><span className="text-xl font-bold text-zinc-100">{weekTaskCount}</span><p className="text-[10px] text-zinc-600 -mt-0.5">tasks</p></div>}
-            {unreadCount>0&&<div className="text-right"><span className="text-xl font-bold text-zinc-100">{unreadCount}</span><p className="text-[10px] text-zinc-600 -mt-0.5">unread</p></div>}
+            {weekTaskCount>0&&<div className="text-right"><span className="text-xl font-bold text-stone-700">{weekTaskCount}</span><p className="text-[10px] text-stone-400 -mt-0.5">tasks</p></div>}
+            {unreadCount>0&&<div className="text-right"><span className="text-xl font-bold text-stone-700">{unreadCount}</span><p className="text-[10px] text-stone-400 -mt-0.5">unread</p></div>}
           </div>
         </div>
 
-        {/* Desktop tabs */}
         <div className="hidden sm:flex items-center gap-0.5 px-3 pb-3">
           {tabs.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
               className={`tab-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                ${tab===t.id?'bg-zinc-800 text-zinc-100':'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900'}`}>
+                ${tab===t.id?'bg-taupe-200 text-stone-700':'text-stone-400 hover:text-stone-600 hover:bg-taupe-100'}`}>
               <t.Icon/>{t.label}
-              {t.count>0&&<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tab===t.id?'bg-indigo-500/25 text-indigo-400':'bg-zinc-800 text-zinc-600'}`}>{t.count}</span>}
+              {t.count>0&&<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tab===t.id?'bg-sage-100 text-sage-700':'bg-taupe-200 text-stone-400'}`}>{t.count}</span>}
             </button>
           ))}
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1 overflow-hidden" key={tab}>{renderContent()}</main>
 
-      {/* Mobile bottom nav */}
-      <nav className="sm:hidden flex-shrink-0 border-t border-zinc-800/50 bg-zinc-950/95 backdrop-blur-md pb-safe">
+      <nav className="sm:hidden flex-shrink-0 border-t border-taupe-200 bg-taupe-50/95 backdrop-blur-md pb-safe">
         <div className="flex">
           {tabs.map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)}
-              className={`tab-btn flex-1 flex flex-col items-center gap-1 pt-3 pb-2 transition-colors ${tab===t.id?'text-indigo-400':'text-zinc-600'}`}>
+              className={`tab-btn flex-1 flex flex-col items-center gap-1 pt-3 pb-2 transition-colors ${tab===t.id?'text-sage-600':'text-stone-400'}`}>
               <div className="relative">
                 <t.Icon/>
-                {t.count>0&&<span className="absolute -top-1.5 -right-2.5 bg-indigo-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{t.count>9?'9+':t.count}</span>}
+                {t.count>0&&<span className="absolute -top-1.5 -right-2.5 bg-sage-600 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{t.count>9?'9+':t.count}</span>}
               </div>
               <span className="text-[10px] font-medium">{t.label}</span>
-              {tab===t.id&&<span className="w-1 h-1 rounded-full bg-indigo-500"/>}
+              {tab===t.id&&<span className="w-1 h-1 rounded-full bg-sage-600"/>}
             </button>
           ))}
         </div>
       </nav>
 
-      {/* FAB */}
       <button onClick={()=>setShowAdd(true)}
-        className="fixed z-40 bottom-[76px] right-4 sm:bottom-6 sm:right-6 w-12 h-12 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-900/50 flex items-center justify-center transition-all active:scale-95"
+        className="fixed z-40 bottom-[76px] right-4 sm:bottom-6 sm:right-6 w-12 h-12 bg-sage-600 hover:bg-sage-700 active:bg-sage-800 text-white rounded-2xl shadow-lg shadow-sage-800/20 flex items-center justify-center transition-all active:scale-95"
         aria-label="Add task"><Ic.Plus/></button>
 
-      {showAdd&&<AddTaskModal onClose={()=>setShowAdd(false)} onAdd={addTask} defaultColId={tab==='week'?activeDayColId:'beyond'} weekDays={weekDays}/>}
+      {showAdd&&<AddTaskModal onClose={()=>setShowAdd(false)} onAdd={addTask} defaultColId={tab==='week'?activeDayColId:'inbox'} weekDays={weekDays}/>}
     </div>
   );
 }
