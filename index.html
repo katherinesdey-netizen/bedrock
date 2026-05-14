@@ -37,8 +37,8 @@
               300: '#a3c09b',
               400: '#7aa370',
               500: '#5d8754',
-              600: '#4a6e42',  // main sage accent
-              700: '#3a5733',  // darker sage / forest
+              600: '#4a6e42',
+              700: '#3a5733',
               800: '#2b4126',
             },
           }
@@ -90,12 +90,12 @@
     .week-slide { min-width:100%; width:100%; overflow-y:auto; }
 
     /* Desktop kanban */
-    .kanban-wrap { display:flex; gap:12px; overflow-x:auto; padding:12px 16px 80px; height:100%; align-items:flex-start; }
-    .kanban-col  { min-width:210px; width:210px; flex-shrink:0; border-radius:10px; background:#fff; border:1px solid #e5ddd3; overflow:hidden; }
+    .kanban-wrap { display:flex; gap:10px; overflow-x:auto; padding:12px 16px 80px; height:100%; align-items:flex-start; }
+    .kanban-col  { min-width:200px; width:200px; flex-shrink:0; border-radius:10px; background:#fff; border:1px solid #e5ddd3; overflow:hidden; }
     .kanban-col.drag-over-col { border-color:#4a6e42; box-shadow:0 0 0 1px #4a6e42; }
 
     /* Inbox panel (desktop sticky left) */
-    .inbox-panel { width:256px; flex-shrink:0; border-right:1px solid #e5ddd3; background:#faf8f5; display:flex; flex-direction:column; overflow:hidden; }
+    .inbox-panel { width:248px; flex-shrink:0; border-right:1px solid #e5ddd3; background:#faf8f5; display:flex; flex-direction:column; overflow:hidden; }
     .inbox-panel.drag-over { box-shadow:inset 2px 0 0 #4a6e42; }
 
     /* Safe area */
@@ -104,6 +104,10 @@
 
     /* Date input */
     input[type="date"]::-webkit-calendar-picker-indicator { filter:invert(0.3) sepia(0.2); cursor:pointer; }
+
+    /* Hide scrollbar on pill row */
+    .pill-row { scrollbar-width:none; }
+    .pill-row::-webkit-scrollbar { display:none; }
   </style>
 </head>
 <body>
@@ -121,7 +125,7 @@ const SRC = {
   personal:   { label:'Personal',   pill:'bg-blue-100 text-blue-700',       dot:'bg-blue-500'   },
   earlehouse: { label:'Earlehouse', pill:'bg-violet-100 text-violet-700',   dot:'bg-violet-500' },
   rise8:      { label:'Rise8',      pill:'bg-emerald-100 text-emerald-700', dot:'bg-emerald-500'},
-  imessage:   { label:'iMessage',   pill:'bg-green-100 text-green-700',   dot:'bg-green-500' },
+  imessage:   { label:'iMessage',   pill:'bg-green-100 text-green-700',     dot:'bg-green-500'  },
   manual:     { label:'Manual',     pill:'bg-stone-200 text-stone-500',     dot:'bg-stone-400'  },
 };
 const SRC_OPTIONS = [
@@ -139,53 +143,55 @@ const PRI = {
   3: { dot:'bg-stone-300', label:'⚪ Low'    },
 };
 
-// ── Week helpers ────────────────────────────────────────────
-// Index 0 = inbox (To Process), 1–5 = Mon–Fri, 6 = Weekend
-const WEEK_COLS = [
-  { id:'inbox',   label:'To Process', short:'≡',  dayOffset:null, isInbox:true },
-  { id:'mon',     label:'Mon',        short:'M',  dayOffset:0 },
-  { id:'tue',     label:'Tue',        short:'T',  dayOffset:1 },
-  { id:'wed',     label:'Wed',        short:'W',  dayOffset:2 },
-  { id:'thu',     label:'Thu',        short:'Th', dayOffset:3 },
-  { id:'fri',     label:'Fri',        short:'F',  dayOffset:4 },
-  { id:'weekend', label:'Weekend',    short:'Wk', dayOffset:5 },
-];
-const DAY_COLS = WEEK_COLS.filter(c => !c.isInbox);
-
-function getWeekDays() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const dow = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-  return Array.from({length:7}, (_,i) => { const d=new Date(monday); d.setDate(monday.getDate()+i); return d; });
-}
-
+// ── Date helpers ────────────────────────────────────────────
 function dateStr(d) { return d ? d.toISOString().split('T')[0] : null; }
 
-function colDate(colId, weekDays) {
-  if (colId === 'inbox') return null;
-  if (colId === 'weekend') return dateStr(weekDays[5]);
-  const idx = {mon:0,tue:1,wed:2,thu:3,fri:4}[colId];
-  return idx !== undefined ? dateStr(weekDays[idx]) : null;
+function todayStr() {
+  const d = new Date(); d.setHours(0,0,0,0);
+  return dateStr(d);
 }
 
-function taskColId(task, weekDays) {
+// Build [inbox, today, tomorrow, ..., day13]
+function buildCols() {
+  const DAY_NAMES  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const DAY_SHORT  = ['Su','M','Tu','W','Th','F','Sa'];
+  const base = new Date(); base.setHours(0,0,0,0);
+  const dayCols = Array.from({length:14}, (_,i) => {
+    const d = new Date(base); d.setDate(base.getDate()+i);
+    const dow = d.getDay();
+    const ds = dateStr(d);
+    const isWeekend = dow === 0 || dow === 6;
+    return {
+      id:        ds,
+      label:     i===0 ? 'Today' : i===1 ? 'Tomorrow' : `${DAY_NAMES[dow]} ${d.getDate()}`,
+      short:     i===0 ? 'Tdy' : DAY_SHORT[dow],
+      dateNum:   d.getDate(),
+      date:      d,
+      isToday:   i===0,
+      isWeekend,
+    };
+  });
+  return [
+    { id:'inbox', isInbox:true, label:'To Process', short:'≡' },
+    ...dayCols,
+  ];
+}
+
+// colDate: for a col id, return the scheduled_date string to store
+function colDate(colId) {
+  return colId === 'inbox' ? null : colId; // colId IS the date string
+}
+
+// Which col does this task belong to?
+function taskColId(task, cols) {
   if (!task.scheduled_date) return 'inbox';
-  const wStrs = weekDays.map(dateStr);
-  const idx = wStrs.indexOf(task.scheduled_date);
-  if (idx === 0) return 'mon';
-  if (idx === 1) return 'tue';
-  if (idx === 2) return 'wed';
-  if (idx === 3) return 'thu';
-  if (idx === 4) return 'fri';
-  if (idx === 5 || idx === 6) return 'weekend';
+  const today = cols.find(c => c.isToday)?.id;
+  // Past tasks fall to today (auto-move should handle this, but belt+suspenders)
+  if (today && task.scheduled_date < today) return today;
+  // Within our 14-day window?
+  if (cols.find(c => !c.isInbox && c.id === task.scheduled_date)) return task.scheduled_date;
+  // Beyond 14 days → inbox
   return 'inbox';
-}
-
-function todayColIdx() {
-  const dow = new Date().getDay();
-  if (dow === 0 || dow === 6) return 6; // weekend at index 6
-  return dow; // mon=1, tue=2, wed=3, thu=4, fri=5
 }
 
 function fmtDue(d) {
@@ -214,11 +220,11 @@ const Ic = {
 };
 
 // ── TaskCard ────────────────────────────────────────────────
-function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, dragHandlers }) {
+function TaskCard({ task, onUpdate, onDone, onReschedule, cols, draggable, dragHandlers }) {
   const [open, setOpen] = useState(false);
   const due = fmtDue(task.due_date);
   const src = task.source_account ? SRC[task.source_account] : null;
-  const currentCol = taskColId(task, weekDays);
+  const currentCol = taskColId(task, cols);
 
   function qa(updates, e) { e.stopPropagation(); onUpdate(task.id, updates); setOpen(false); }
 
@@ -227,7 +233,7 @@ function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, d
       <div className="flex items-start gap-3 px-3 py-3 cursor-pointer" onClick={()=>setOpen(o=>!o)}>
         {draggable && <div className="hidden sm:flex mt-1 flex-shrink-0 opacity-20 cursor-grab"><svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 text-stone-400"><path d="M7 2a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zM7 8a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4zm-6 6a2 2 0 110 4 2 2 0 010-4zm6 0a2 2 0 110 4 2 2 0 010-4z"/></svg></div>}
         <div className="check-circle mt-0.5" onClick={e=>{e.stopPropagation();onDone(task.id);}}>
-          <span className="text-sage-600 opacity-0 hover:opacity-100"><Ic.Check /></span>
+          <span className="text-sage-600"><Ic.Check /></span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5">
@@ -255,10 +261,10 @@ function TaskCard({ task, onUpdate, onDone, onReschedule, weekDays, draggable, d
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wide mr-0.5">Move to</span>
-            {WEEK_COLS.map(col => col.id === currentCol ? null : (
+            {cols.map(col => col.id === currentCol ? null : (
               <button key={col.id} onClick={e=>{e.stopPropagation();onReschedule(task.id,col.id);setOpen(false);}}
                 className="text-[10px] font-medium bg-taupe-100 hover:bg-sage-100 hover:text-sage-700 text-stone-400 px-2 py-1 rounded-full transition-colors">
-                {col.id==='inbox' ? '≡ Inbox' : col.label}
+                {col.isInbox ? '≡ Inbox' : col.label}
               </button>
             ))}
           </div>
@@ -290,12 +296,13 @@ function ReadingCard({ item, onMarkRead }) {
 }
 
 // ── AddTaskModal ────────────────────────────────────────────
-function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
-  const defaultDate = defaultColId && defaultColId !== 'inbox' ? colDate(defaultColId, weekDays) : '';
+function AddTaskModal({ onClose, onAdd, defaultColId, cols }) {
+  const dayCols = cols.filter(c => !c.isInbox);
+  const defaultDate = defaultColId && defaultColId !== 'inbox' ? defaultColId : '';
   const [form, setForm] = useState({
     title:'', notes:'', status:'active', priority:2,
     due_date:'', waiting_on:'', source_account:'',
-    scheduled_date: defaultDate || '',
+    scheduled_date: defaultDate,
   });
   const [saving, setSaving] = useState(false);
   const titleRef = useRef(null);
@@ -342,13 +349,12 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
                 <select value={form.scheduled_date} onChange={e=>set('scheduled_date',e.target.value)}
                   className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
                   <option value="">To Process</option>
-                  {DAY_COLS.map(col=>{
-                    const d = colDate(col.id, weekDays);
-                    const label = col.id==='weekend'
-                      ? `Weekend (${new Date(weekDays[5]).toLocaleDateString('en-US',{month:'numeric',day:'numeric'})})`
-                      : `${col.label} (${new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'numeric',day:'numeric'})})`;
-                    return <option key={col.id} value={d||''}>{label}</option>;
-                  })}
+                  {dayCols.map(col => (
+                    <option key={col.id} value={col.id}>
+                      {col.label}
+                      {!col.isToday && !col.label.startsWith('Tomorrow') ? ` · ${col.date.toLocaleDateString('en-US',{month:'numeric',day:'numeric'})}` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -395,27 +401,38 @@ function AddTaskModal({ onClose, onAdd, defaultColId, weekDays }) {
 }
 
 // ── WeekView ────────────────────────────────────────────────
-function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, setActiveDay }) {
+function WeekView({ tasks, cols, onUpdate, onDone, onReschedule, activeDay, setActiveDay }) {
   const touchStartX = useRef(null);
+  const pillRowRef  = useRef(null);
   const [draggedId,   setDraggedId]   = useState(null);
   const [colDragOver, setColDragOver] = useState(null);
 
+  const dayCols = useMemo(()=>cols.filter(c=>!c.isInbox),[cols]);
+
   const colTasks = useMemo(()=>{
-    const groups = Object.fromEntries(WEEK_COLS.map(c=>[c.id,[]]));
+    const groups = Object.fromEntries(cols.map(c=>[c.id,[]]));
     tasks.filter(t=>t.status!=='waiting').forEach(t=>{
-      const col = taskColId(t, weekDays);
-      (groups[col]||groups.inbox).push(t);
+      const col = taskColId(t, cols);
+      if (groups[col]) groups[col].push(t);
+      else groups['inbox'].push(t);
     });
     Object.values(groups).forEach(arr=>arr.sort((a,b)=>(a.priority??2)-(b.priority??2)||(a.sort_order??9999)-(b.sort_order??9999)));
     return groups;
-  },[tasks, weekDays]);
+  },[tasks, cols]);
+
+  // Scroll active pill into view
+  useEffect(()=>{
+    if (!pillRowRef.current) return;
+    const pill = pillRowRef.current.children[activeDay];
+    if (pill) pill.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  },[activeDay]);
 
   function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
   function onTouchEnd(e) {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 45) {
-      if (dx < 0 && activeDay < WEEK_COLS.length-1) setActiveDay(d=>d+1);
+      if (dx < 0 && activeDay < cols.length-1) setActiveDay(d=>d+1);
       if (dx > 0 && activeDay > 0) setActiveDay(d=>d-1);
     }
     touchStartX.current = null;
@@ -426,19 +443,6 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, 
   function onColDrop(e, colId)        { e.preventDefault(); if (draggedId) onReschedule(draggedId, colId); setDraggedId(null); setColDragOver(null); }
   function onDragEnd()                { setDraggedId(null); setColDragOver(null); }
 
-  function isToday(col) {
-    if (col.isInbox) return false;
-    const today = new Date(); today.setHours(0,0,0,0);
-    if (col.id==='weekend') return today.toDateString()===weekDays[5].toDateString()||today.toDateString()===weekDays[6].toDateString();
-    return weekDays[col.dayOffset]?.toDateString()===today.toDateString();
-  }
-
-  function colDateLabel(col) {
-    if (col.isInbox) return '';
-    if (col.id==='weekend') return `${weekDays[5].getDate()}–${weekDays[6].getDate()}`;
-    return weekDays[col.dayOffset].getDate();
-  }
-
   function renderCards(colId) {
     const list = colTasks[colId]||[];
     if (!list.length) return (
@@ -448,7 +452,7 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, 
     );
     return list.map(task=>(
       <TaskCard key={task.id} task={task} onUpdate={onUpdate} onDone={onDone}
-        onReschedule={onReschedule} weekDays={weekDays} draggable
+        onReschedule={onReschedule} cols={cols} draggable
         dragHandlers={{
           draggable:true,
           onDragStart:e=>onCardDragStart(e,task.id),
@@ -459,54 +463,68 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, 
     ));
   }
 
+  // Col header for desktop
+  function colHeader(col) {
+    if (col.isToday) return { top:'Today', sub: col.date.toLocaleDateString('en-US',{month:'short',day:'numeric'}) };
+    if (col.label==='Tomorrow') return { top:'Tomorrow', sub: col.date.toLocaleDateString('en-US',{month:'short',day:'numeric'}) };
+    const dow = col.date.getDay();
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return { top: dayNames[dow], sub: col.date.toLocaleDateString('en-US',{month:'short',day:'numeric'}) };
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* Mobile day pills */}
-      <div className="sm:hidden flex-shrink-0 flex items-center gap-0.5 overflow-x-auto px-3 pt-2 pb-1" style={{scrollbarWidth:'none'}}>
-        {WEEK_COLS.map((col,i)=>{
-          const active = activeDay===i;
-          const today  = isToday(col);
-          const count  = (colTasks[col.id]||[]).length;
-          return (
-            <button key={col.id} onClick={()=>setActiveDay(i)}
-              className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl min-w-[36px] transition-colors
-                ${active ? (today?'bg-sage-600 text-white':'bg-taupe-200 text-stone-700') : (today?'text-sage-600':'text-stone-400')}`}>
-              <span className="text-[11px] font-bold">{col.short}</span>
-              {!col.isInbox && <span className="text-[10px] opacity-70">{colDateLabel(col)}</span>}
-              {col.isInbox  && <span className="text-[10px] opacity-40">—</span>}
-              <span className={`w-1 h-1 rounded-full ${count>0?(active?'bg-white/60':'bg-sage-500'):'bg-transparent'}`}/>
-            </button>
-          );
-        })}
+      <div className="sm:hidden flex-shrink-0 overflow-x-auto px-2 pt-2 pb-1 pill-row">
+        <div ref={pillRowRef} className="flex items-center gap-0.5 w-max">
+          {cols.map((col,i)=>{
+            const active = activeDay===i;
+            const count  = (colTasks[col.id]||[]).length;
+            return (
+              <button key={col.id} onClick={()=>setActiveDay(i)}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl min-w-[40px] transition-colors
+                  ${active ? (col.isToday?'bg-sage-600 text-white':'bg-taupe-200 text-stone-700') : (col.isToday?'text-sage-600':'text-stone-400')}`}>
+                <span className="text-[10px] font-bold">{col.short}</span>
+                {!col.isInbox && <span className="text-[10px] opacity-70">{col.dateNum}</span>}
+                {col.isInbox  && <span className="text-[10px] opacity-40">—</span>}
+                <span className={`w-1 h-1 rounded-full ${count>0?(active?'bg-white/60':'bg-sage-500'):'bg-transparent'}`}/>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Mobile swipeable slides */}
       <div className="sm:hidden flex-1 overflow-hidden week-slider-wrap" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="week-slider h-full" style={{transform:`translateX(-${activeDay*100}%)`}}>
-          {WEEK_COLS.map(col=>(
-            <div key={col.id} className="week-slide">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-taupe-200 sticky top-0 bg-taupe-100/95 backdrop-blur-sm">
-                <div>
-                  <span className="text-sm font-semibold text-stone-700">{col.label}</span>
-                  {!col.isInbox && <span className="text-xs text-stone-400 ml-2">
-                    {col.id==='weekend'
-                      ? `${weekDays[5].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${weekDays[6].toLocaleDateString('en-US',{day:'numeric'})}`
-                      : weekDays[col.dayOffset]?.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
-                  </span>}
+          {cols.map(col=>{
+            const hdr = col.isInbox ? null : colHeader(col);
+            return (
+              <div key={col.id} className="week-slide">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-taupe-200 sticky top-0 bg-taupe-100/95 backdrop-blur-sm">
+                  <div>
+                    <span className="text-sm font-semibold text-stone-700">{col.label}</span>
+                    {hdr && !col.isToday && col.label !== 'Tomorrow' && (
+                      <span className="text-xs text-stone-400 ml-2">{col.date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                    )}
+                    {(col.isToday || col.label==='Tomorrow') && (
+                      <span className="text-xs text-stone-400 ml-2">{col.date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-stone-400">{(colTasks[col.id]||[]).length}</span>
                 </div>
-                <span className="text-xs text-stone-400">{(colTasks[col.id]||[]).length}</span>
+                <div className="overflow-y-auto" style={{height:'calc(100% - 44px)'}}>
+                  {renderCards(col.id)}
+                  <div className="h-24"/>
+                </div>
               </div>
-              <div className="overflow-y-auto" style={{height:'calc(100% - 44px)'}}>
-                {renderCards(col.id)}
-                <div className="h-24"/>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Desktop: inbox panel + scrollable day kanban */}
+      {/* Desktop: inbox + scrollable day kanban */}
       <div className="hidden sm:flex flex-1 overflow-hidden">
 
         {/* Inbox — sticky left */}
@@ -524,31 +542,32 @@ function WeekView({ tasks, weekDays, onUpdate, onDone, onReschedule, activeDay, 
           </div>
         </div>
 
-        {/* Day columns */}
+        {/* Day columns — scrollable */}
         <div className="flex-1 overflow-hidden">
           <div className="kanban-wrap">
-            {DAY_COLS.map(col=>(
-              <div key={col.id}
-                className={`kanban-col ${colDragOver===col.id&&draggedId?'drag-over-col':''}`}
-                onDragOver={e=>onColDragOver(e,col.id)}
-                onDrop={e=>onColDrop(e,col.id)}
-                onDragLeave={()=>setColDragOver(null)}>
-                <div className={`px-3 py-2.5 border-b border-taupe-200/60 ${isToday(col)?'bg-sage-50':''}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-2">
-                      <span className={`text-xs font-bold uppercase tracking-wider ${isToday(col)?'text-sage-600':'text-stone-400'}`}>{col.label}</span>
-                      <span className="text-[11px] text-stone-300">
-                        {col.id==='weekend' ? `${weekDays[5].getDate()}–${weekDays[6].getDate()}` : weekDays[col.dayOffset]?.getDate()}
-                      </span>
+            {dayCols.map(col=>{
+              const hdr = colHeader(col);
+              return (
+                <div key={col.id}
+                  className={`kanban-col ${colDragOver===col.id&&draggedId?'drag-over-col':''}`}
+                  onDragOver={e=>onColDragOver(e,col.id)}
+                  onDrop={e=>onColDrop(e,col.id)}
+                  onDragLeave={()=>setColDragOver(null)}>
+                  <div className={`px-3 py-2 border-b border-taupe-200/60 ${col.isToday?'bg-sage-50':''} ${col.isWeekend?'bg-taupe-50':''}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className={`text-xs font-bold uppercase tracking-wider ${col.isToday?'text-sage-600':'text-stone-400'}`}>{hdr.top}</span>
+                        <span className={`text-[10px] ml-1.5 ${col.isToday?'text-sage-500':'text-stone-300'}`}>{hdr.sub}</span>
+                      </div>
+                      <span className="text-[10px] text-stone-400 bg-taupe-100 px-1.5 py-0.5 rounded">{(colTasks[col.id]||[]).length}</span>
                     </div>
-                    <span className="text-[10px] text-stone-400 bg-taupe-100 px-1.5 py-0.5 rounded">{(colTasks[col.id]||[]).length}</span>
+                  </div>
+                  <div className="overflow-y-auto" style={{maxHeight:'calc(100vh - 200px)'}}>
+                    {renderCards(col.id)}
                   </div>
                 </div>
-                <div className="overflow-y-auto" style={{maxHeight:'calc(100vh - 200px)'}}>
-                  {renderCards(col.id)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -584,21 +603,37 @@ function App() {
   const [tasks,     setTasks]     = useState([]);
   const [reading,   setReading]   = useState([]);
   const [tab,       setTab]       = useState('week');
-  const [activeDay, setActiveDay] = useState(todayColIdx);
+  const [activeDay, setActiveDay] = useState(1); // 0=inbox, 1=today
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
   const [showAdd,   setShowAdd]   = useState(false);
-  const weekDays = useMemo(()=>getWeekDays(),[]);
+
+  // cols is stable for the session — rolling 14 days from load time
+  const cols = useMemo(()=>buildCols(),[]);
 
   const load = useCallback(async()=>{
     setLoading(true); setError(null);
     try {
+      const today = todayStr();
       const [{data:t,error:te},{data:r,error:re}] = await Promise.all([
         db.from('tasks').select('*').neq('status','done').order('sort_order',{ascending:true,nullsFirst:false}),
         db.from('reading_list').select('*').order('created_at',{ascending:false}),
       ]);
       if(te) throw te; if(re) throw re;
-      setTasks(t||[]); setReading(r||[]);
+
+      // Auto-move past tasks to today
+      const pastTasks = (t||[]).filter(task =>
+        task.scheduled_date && task.scheduled_date < today && task.status !== 'waiting'
+      );
+      if (pastTasks.length > 0) {
+        await Promise.all(pastTasks.map(task =>
+          db.from('tasks').update({scheduled_date: today}).eq('id', task.id)
+        ));
+      }
+      const merged = (t||[]).map(task =>
+        pastTasks.find(pt=>pt.id===task.id) ? {...task, scheduled_date: today} : task
+      );
+      setTasks(merged); setReading(r||[]);
     } catch(e) { setError(e.message||'Connection error.'); }
     finally { setLoading(false); }
   },[]);
@@ -623,8 +658,8 @@ function App() {
   },[load]);
 
   const rescheduleTask = useCallback(async(taskId,colId)=>{
-    updateTask(taskId,{scheduled_date: colDate(colId, weekDays)});
-  },[weekDays, updateTask]);
+    updateTask(taskId,{scheduled_date: colDate(colId)});
+  },[updateTask]);
 
   const markRead = useCallback(async(id)=>{
     const now=new Date().toISOString();
@@ -645,10 +680,10 @@ function App() {
   function renderContent() {
     if(loading) return <div className="flex flex-col items-center justify-center h-full gap-3"><div className="w-6 h-6 rounded-full border-2 border-sage-500 border-t-transparent spinner"/><p className="text-xs text-stone-400">Loading…</p></div>;
     if(error)   return <div className="flex flex-col items-center justify-center h-full px-8 text-center gap-3"><p className="text-sm font-medium text-red-500">Connection error</p><p className="text-xs text-stone-400">{error}</p><button onClick={load} className="text-xs text-sage-700 border border-sage-400/40 px-4 py-1.5 rounded-full">Retry</button></div>;
-    if(tab==='week') return <WeekView tasks={tasks} weekDays={weekDays} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} activeDay={activeDay} setActiveDay={setActiveDay}/>;
+    if(tab==='week') return <WeekView tasks={tasks} cols={cols} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} activeDay={activeDay} setActiveDay={setActiveDay}/>;
     if(tab==='waiting') return waitingTasks.length===0 ? <Empty tab="waiting"/> : (
       <div><SectionHead label="Waiting on" count={waitingTasks.length}/>
-        {waitingTasks.map(t=><TaskCard key={t.id} task={t} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} weekDays={weekDays}/>)}
+        {waitingTasks.map(t=><TaskCard key={t.id} task={t} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols}/>)}
       </div>
     );
     if(tab==='reading') {
@@ -662,7 +697,7 @@ function App() {
     }
   }
 
-  const activeDayColId = WEEK_COLS[activeDay]?.id || 'inbox';
+  const activeDayColId = cols[activeDay]?.id || 'inbox';
 
   return (
     <div className="flex flex-col h-screen bg-taupe-100 overflow-hidden">
@@ -720,7 +755,7 @@ function App() {
         className="fixed z-40 bottom-[76px] right-4 sm:bottom-6 sm:right-6 w-12 h-12 bg-sage-600 hover:bg-sage-700 active:bg-sage-800 text-white rounded-2xl shadow-lg shadow-sage-800/20 flex items-center justify-center transition-all active:scale-95"
         aria-label="Add task"><Ic.Plus/></button>
 
-      {showAdd&&<AddTaskModal onClose={()=>setShowAdd(false)} onAdd={addTask} defaultColId={tab==='week'?activeDayColId:'inbox'} weekDays={weekDays}/>}
+      {showAdd&&<AddTaskModal onClose={()=>setShowAdd(false)} onAdd={addTask} defaultColId={tab==='week'?activeDayColId:'inbox'} cols={cols}/>}
     </div>
   );
 }
