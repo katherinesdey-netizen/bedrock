@@ -51,3 +51,4 @@ The app is a single `index.html` — GitHub Pages serves it directly from the `m
 - Per-task edit modal
 - Someday / snoozed views
 - Tags filter
+# trip-ops
