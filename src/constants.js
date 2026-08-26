@@ -15,6 +15,16 @@ export const SRC_OPTIONS = [
   { value: 'manual',     label: 'Manual'     },
 ];
 
+// Area color_key → UI tokens
+export const AREA_COLORS = {
+  personal:   { dot: 'bg-blue-400',    ring: 'border-l-blue-300',    pill: 'bg-blue-50 text-blue-600'     },
+  earlehouse: { dot: 'bg-violet-400',  ring: 'border-l-violet-300',  pill: 'bg-violet-50 text-violet-600' },
+  groove:     { dot: 'bg-cyan-400',    ring: 'border-l-cyan-300',    pill: 'bg-cyan-50 text-cyan-600'     },
+  alpenborg:  { dot: 'bg-amber-500',   ring: 'border-l-amber-400',   pill: 'bg-amber-50 text-amber-600'   },
+  fpll:       { dot: 'bg-red-400',     ring: 'border-l-red-300',     pill: 'bg-red-50 text-red-600'       },
+  finance:    { dot: 'bg-emerald-400', ring: 'border-l-emerald-300', pill: 'bg-emerald-50 text-emerald-600'},
+};
+
 export const PRI = {
   1: { dot: 'bg-red-400',   label: '🔴 High'   },
   2: { dot: 'bg-amber-400', label: '🟡 Medium' },

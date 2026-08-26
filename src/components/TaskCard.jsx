@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { SRC, PRI } from '../constants';
+import { SRC, PRI, AREA_COLORS } from '../constants';
 import { fmtDue, taskColId } from '../utils';
 import { Ic } from './Icons';
 
-export function TaskCard({ task, onUpdate, onDone, onReschedule, cols, draggable, dragHandlers }) {
+export function TaskCard({ task, areas = [], onUpdate, onDone, onReschedule, cols, draggable, dragHandlers }) {
   const [open, setOpen] = useState(false);
   const due = fmtDue(task.due_date);
   const src = task.source_account ? SRC[task.source_account] : null;
   const currentCol = taskColId(task, cols);
+  const area = task.area_id ? areas.find(a => a.id === task.area_id) : null;
+  const areaColors = area ? AREA_COLORS[area.color_key] : null;
 
   function qa(updates, e) {
     e.stopPropagation();
@@ -16,7 +18,7 @@ export function TaskCard({ task, onUpdate, onDone, onReschedule, cols, draggable
   }
 
   return (
-    <div className="task-card border-b border-taupe-200/60" {...(dragHandlers || {})}>
+    <div className={`task-card border-b border-taupe-200/60 border-l-2 ${areaColors ? areaColors.ring : 'border-l-transparent'}`} {...(dragHandlers || {})}>
       <div className="flex items-start gap-3 px-3 py-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
         {draggable && (
           <div className="hidden sm:flex mt-1 flex-shrink-0 opacity-20 cursor-grab">
@@ -37,6 +39,11 @@ export function TaskCard({ task, onUpdate, onDone, onReschedule, cols, draggable
             {src && (
               <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${src.pill}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${src.dot}`} />{src.label}
+              </span>
+            )}
+            {area && areaColors && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${areaColors.pill}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${areaColors.dot}`} />{area.name}
               </span>
             )}
             {due && <span className={`text-[10px] font-medium ${due.over ? 'text-red-500' : 'text-stone-400'}`}>{due.over ? '⚠ ' : ''}{due.str}</span>}

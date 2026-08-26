@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { SRC_OPTIONS } from '../constants';
 import { Ic } from './Icons';
 
-export function AddTaskModal({ onClose, onAdd, defaultColId, cols }) {
+export function AddTaskModal({ onClose, onAdd, defaultColId, cols, areas = [] }) {
   const dayCols = cols.filter(c => !c.isInbox);
   const defaultDate = defaultColId && defaultColId !== 'inbox' ? defaultColId : '';
   const [form, setForm] = useState({
     title: '', notes: '', status: 'active', priority: 2,
     due_date: '', waiting_on: '', source_account: '',
     scheduled_date: defaultDate,
+    area_id: '',
   });
   const [saving, setSaving] = useState(false);
   const titleRef = useRef(null);
@@ -31,6 +32,7 @@ export function AddTaskModal({ onClose, onAdd, defaultColId, cols }) {
       source:         'manual',
       source_account: form.source_account || null,
       scheduled_date: form.scheduled_date || null,
+      area_id:        form.area_id || null,
     });
     onClose();
   }
@@ -92,12 +94,22 @@ export function AddTaskModal({ onClose, onAdd, defaultColId, cols }) {
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Source</label>
-              <select value={form.source_account} onChange={e => set('source_account', e.target.value)}
-                className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
-                {SRC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Area</label>
+                <select value={form.area_id} onChange={e => set('area_id', e.target.value)}
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
+                  <option value="">— none —</option>
+                  {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-stone-400 mb-1.5 uppercase tracking-wide">Source</label>
+                <select value={form.source_account} onChange={e => set('source_account', e.target.value)}
+                  className="w-full bg-taupe-50 border border-taupe-200 rounded-xl px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-sage-500/60 cursor-pointer">
+                  {SRC_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </div>
 
             <button type="submit" disabled={!form.title.trim() || saving}

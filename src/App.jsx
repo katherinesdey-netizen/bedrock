@@ -11,6 +11,7 @@ import { SectionHead, Empty } from './components/SectionHead';
 export default function App() {
   const [tasks,     setTasks]     = useState([]);
   const [reading,   setReading]   = useState([]);
+  const [areas,     setAreas]     = useState([]);
   const [tab,       setTab]       = useState('week');
   const [activeDay, setActiveDay] = useState(1); // 0=inbox, 1=today
   const [loading,   setLoading]   = useState(true);
@@ -24,12 +25,14 @@ export default function App() {
     setLoading(true); setError(null);
     try {
       const today = todayStr();
-      const [{ data: t, error: te }, { data: r, error: re }] = await Promise.all([
+      const [{ data: t, error: te }, { data: r, error: re }, { data: a, error: ae }] = await Promise.all([
         db.from('tasks').select('*').neq('status', 'done').order('sort_order', { ascending: true, nullsFirst: false }),
         db.from('reading_list').select('*').order('created_at', { ascending: false }),
+        db.from('areas').select('*').order('sort_order', { ascending: true }),
       ]);
       if (te) throw te;
       if (re) throw re;
+      if (ae) throw ae;
 
       // Auto-move past tasks to today
       const pastTasks = (t || []).filter(task =>
@@ -45,6 +48,7 @@ export default function App() {
       );
       setTasks(merged);
       setReading(r || []);
+      setAreas(a || []);
     } catch (e) {
       setError(e.message || 'Connection error.');
     } finally {
@@ -107,14 +111,14 @@ export default function App() {
       </div>
     );
     if (tab === 'week') return (
-      <WeekView tasks={tasks} cols={cols} onUpdate={updateTask} onDone={markDone}
+      <WeekView tasks={tasks} cols={cols} areas={areas} onUpdate={updateTask} onDone={markDone}
         onReschedule={rescheduleTask} activeDay={activeDay} setActiveDay={setActiveDay} />
     );
     if (tab === 'waiting') return waitingTasks.length === 0 ? <Empty tab="waiting" /> : (
       <div>
         <SectionHead label="Waiting on" count={waitingTasks.length} />
         {waitingTasks.map(t => (
-          <TaskCard key={t.id} task={t} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
+          <TaskCard key={t.id} task={t} areas={areas} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
         ))}
       </div>
     );
@@ -213,7 +217,7 @@ export default function App() {
 
       {showAdd && (
         <AddTaskModal onClose={() => setShowAdd(false)} onAdd={addTask}
-          defaultColId={tab === 'week' ? activeDayColId : 'inbox'} cols={cols} />
+          defaultColId={tab === 'week' ? activeDayColId : 'inbox'} cols={cols} areas={areas} />
       )}
     </div>
   );
