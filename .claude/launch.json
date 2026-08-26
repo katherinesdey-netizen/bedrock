@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bedrock-dev",
+      "runtimeExecutable": "/Users/katherinedey/Documents/Bedrock/node_modules/.bin/vite",
+      "runtimeArgs": [],
+      "port": 5173
+    }
+  ]
+}
