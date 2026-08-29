@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { taskColId } from '../utils';
 import { TaskCard } from './TaskCard';
 
-export function WeekView({ tasks, cols, areas, onUpdate, onDone, onReschedule, activeDay, setActiveDay }) {
+export function WeekView({ tasks, cols, areas, projects, onUpdate, onDone, onReschedule, activeDay, setActiveDay }) {
   const touchStartX = useRef(null);
   const pillRowRef  = useRef(null);
   const [draggedId,   setDraggedId]   = useState(null);
@@ -55,7 +55,7 @@ export function WeekView({ tasks, cols, areas, onUpdate, onDone, onReschedule, a
       );
     }
     return list.map(task => (
-      <TaskCard key={task.id} task={task} areas={areas} onUpdate={onUpdate} onDone={onDone}
+      <TaskCard key={task.id} task={task} areas={areas} projects={projects} onUpdate={onUpdate} onDone={onDone}
         onReschedule={onReschedule} cols={cols} draggable
         dragHandlers={{
           draggable: true,

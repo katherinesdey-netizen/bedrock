@@ -3,13 +3,15 @@ import { SRC, PRI, AREA_COLORS } from '../constants';
 import { fmtDue, taskColId } from '../utils';
 import { Ic } from './Icons';
 
-export function TaskCard({ task, areas = [], onUpdate, onDone, onReschedule, cols, draggable, dragHandlers }) {
+export function TaskCard({ task, areas = [], projects = [], onUpdate, onDone, onReschedule, cols, draggable, dragHandlers }) {
   const [open, setOpen] = useState(false);
   const due = fmtDue(task.due_date);
   const src = task.source_account ? SRC[task.source_account] : null;
   const currentCol = taskColId(task, cols);
   const area = task.area_id ? areas.find(a => a.id === task.area_id) : null;
   const areaColors = area ? AREA_COLORS[area.color_key] : null;
+  const assignedProject = task.project_id ? projects.find(p => p.id === task.project_id) : null;
+  const activeProjects = projects.filter(p => p.status === 'active');
 
   function qa(updates, e) {
     e.stopPropagation();
@@ -79,6 +81,26 @@ export function TaskCard({ task, areas = [], onUpdate, onDone, onReschedule, col
               </button>
             )}
           </div>
+
+          {/* Project assignment */}
+          {(assignedProject || activeProjects.length > 0) && (
+            <div className="mb-2.5">
+              <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wide">Project</span>
+              {assignedProject ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-stone-600 bg-taupe-100 px-2 py-1 rounded-full">{assignedProject.title}</span>
+                  <button onClick={e => { e.stopPropagation(); onUpdate(task.id, { project_id: null }); }}
+                    className="text-[10px] text-stone-400 hover:text-red-500 transition-colors">✕</button>
+                </div>
+              ) : (
+                <select defaultValue="" onChange={e => { if (e.target.value) onUpdate(task.id, { project_id: e.target.value }); }}
+                  className="mt-1 w-full bg-taupe-100 border border-taupe-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-600 focus:outline-none cursor-pointer">
+                  <option value="">— assign to project —</option>
+                  {activeProjects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wide mr-0.5">Move to</span>

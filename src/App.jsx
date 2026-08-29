@@ -6,12 +6,15 @@ import { TaskCard } from './components/TaskCard';
 import { ReadingCard } from './components/ReadingCard';
 import { AddTaskModal } from './components/AddTaskModal';
 import { WeekView } from './components/WeekView';
+import { PlansView } from './components/PlansView';
 import { SectionHead, Empty } from './components/SectionHead';
 
 export default function App() {
   const [tasks,     setTasks]     = useState([]);
   const [reading,   setReading]   = useState([]);
   const [areas,     setAreas]     = useState([]);
+  const [goals,     setGoals]     = useState([]);
+  const [projects,  setProjects]  = useState([]);
   const [tab,       setTab]       = useState('week');
   const [activeDay, setActiveDay] = useState(1); // 0=inbox, 1=today
   const [loading,   setLoading]   = useState(true);
@@ -25,14 +28,18 @@ export default function App() {
     setLoading(true); setError(null);
     try {
       const today = todayStr();
-      const [{ data: t, error: te }, { data: r, error: re }, { data: a, error: ae }] = await Promise.all([
+      const [{ data: t, error: te }, { data: r, error: re }, { data: a, error: ae }, { data: g, error: ge }, { data: pr, error: pre }] = await Promise.all([
         db.from('tasks').select('*').neq('status', 'done').order('sort_order', { ascending: true, nullsFirst: false }),
         db.from('reading_list').select('*').order('created_at', { ascending: false }),
         db.from('areas').select('*').order('sort_order', { ascending: true }),
+        db.from('goals').select('*').neq('status', 'complete').order('created_at', { ascending: true }),
+        db.from('projects').select('*').neq('status', 'complete').order('created_at', { ascending: true }),
       ]);
       if (te) throw te;
       if (re) throw re;
       if (ae) throw ae;
+      if (ge) throw ge;
+      if (pre) throw pre;
 
       // Auto-move past tasks to today
       const pastTasks = (t || []).filter(task =>
@@ -49,6 +56,8 @@ export default function App() {
       setTasks(merged);
       setReading(r || []);
       setAreas(a || []);
+      setGoals(g || []);
+      setProjects(pr || []);
     } catch (e) {
       setError(e.message || 'Connection error.');
     } finally {
@@ -80,6 +89,30 @@ export default function App() {
     updateTask(taskId, { scheduled_date: colDate(colId) });
   }, [updateTask]);
 
+  const addGoal = useCallback(async (data) => {
+    const { data: rows, error } = await db.from('goals').insert([data]).select();
+    if (!error && rows) setGoals(p => [...p, rows[0]]);
+    else if (error) load();
+  }, [load]);
+
+  const updateGoal = useCallback(async (id, updates) => {
+    setGoals(p => updates.status === 'complete' ? p.filter(g => g.id !== id) : p.map(g => g.id === id ? { ...g, ...updates } : g));
+    const { error } = await db.from('goals').update(updates).eq('id', id);
+    if (error) load();
+  }, [load]);
+
+  const addProject = useCallback(async (data) => {
+    const { data: rows, error } = await db.from('projects').insert([data]).select();
+    if (!error && rows) setProjects(p => [...p, rows[0]]);
+    else if (error) load();
+  }, [load]);
+
+  const updateProject = useCallback(async (id, updates) => {
+    setProjects(p => updates.status === 'complete' ? p.filter(pr => pr.id !== id) : p.map(pr => pr.id === id ? { ...pr, ...updates } : pr));
+    const { error } = await db.from('projects').update(updates).eq('id', id);
+    if (error) load();
+  }, [load]);
+
   const markRead = useCallback(async (id) => {
     const now = new Date().toISOString();
     setReading(p => p.map(r => r.id === id ? { ...r, read_at: now } : r));
@@ -90,8 +123,11 @@ export default function App() {
   const unreadCount   = useMemo(() => reading.filter(r => !r.read_at).length, [reading]);
   const weekTaskCount = useMemo(() => tasks.filter(t => t.status !== 'waiting').length, [tasks]);
 
+  const plansCount = goals.filter(g => g.status !== 'complete').length + projects.filter(p => p.status !== 'complete').length;
+
   const tabs = [
     { id: 'week',    label: 'Week',    Icon: Ic.Week,    count: weekTaskCount },
+    { id: 'plans',   label: 'Plans',   Icon: Ic.Plans,   count: plansCount    },
     { id: 'waiting', label: 'Waiting', Icon: Ic.Waiting, count: waitingTasks.length },
     { id: 'reading', label: 'Reading', Icon: Ic.Reading, count: unreadCount },
   ];
@@ -111,14 +147,19 @@ export default function App() {
       </div>
     );
     if (tab === 'week') return (
-      <WeekView tasks={tasks} cols={cols} areas={areas} onUpdate={updateTask} onDone={markDone}
+      <WeekView tasks={tasks} cols={cols} areas={areas} projects={projects} onUpdate={updateTask} onDone={markDone}
         onReschedule={rescheduleTask} activeDay={activeDay} setActiveDay={setActiveDay} />
+    );
+    if (tab === 'plans') return (
+      <PlansView goals={goals} projects={projects} areas={areas} tasks={tasks}
+        onAddGoal={addGoal} onUpdateGoal={updateGoal}
+        onAddProject={addProject} onUpdateProject={updateProject} />
     );
     if (tab === 'waiting') return waitingTasks.length === 0 ? <Empty tab="waiting" /> : (
       <div>
         <SectionHead label="Waiting on" count={waitingTasks.length} />
         {waitingTasks.map(t => (
-          <TaskCard key={t.id} task={t} areas={areas} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
+          <TaskCard key={t.id} task={t} areas={areas} projects={projects} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
         ))}
       </div>
     );
