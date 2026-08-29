@@ -32,7 +32,7 @@ export function PlansView({ goals, projects, areas, tasks, onAddGoal, onUpdateGo
 
       <div className="flex-1 overflow-hidden">
         {view === 'goals'
-          ? <GoalsView goals={activeGoals} projects={projects} areas={areas} onAdd={onAddGoal} onUpdate={onUpdateGoal} />
+          ? <GoalsView goals={activeGoals} projects={projects} areas={areas} onAdd={onAddGoal} onUpdate={onUpdateGoal} onAddProject={onAddProject} />
           : <ProjectsView projects={activeProjects} areas={areas} goals={activeGoals} tasks={tasks} onAdd={onAddProject} onUpdate={onUpdateProject} />
         }
       </div>

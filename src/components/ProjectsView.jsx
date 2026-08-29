@@ -95,8 +95,8 @@ function ProjectCard({ project, area, tasks, onUpdate }) {
   );
 }
 
-function AddProjectModal({ areas, goals, onAdd, onClose }) {
-  const [form, setForm] = useState({ title: '', area_id: '', goal_id: '', priority: 2, notes: '' });
+export function AddProjectModal({ areas, goals, onAdd, onClose, defaultAreaId = '', defaultGoalId = '' }) {
+  const [form, setForm] = useState({ title: '', area_id: defaultAreaId, goal_id: defaultGoalId, priority: 2, notes: '' });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
