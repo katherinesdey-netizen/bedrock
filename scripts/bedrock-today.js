@@ -45,6 +45,7 @@ async function buildWidget() {
   const w = new ListWidget();
   w.backgroundColor = C.bg;
   w.setPadding(14, 16, 14, 12);
+  w.spacing = 0;
 
   // Header
   const hRow = w.addStack();
@@ -52,19 +53,20 @@ async function buildWidget() {
   hRow.centerAlignContent();
   hRow.url = APP_URL;
   const hText = hRow.addText('Bedrock');
-  hText.font = Font.boldSystemFont(13);
+  hText.font = Font.boldSystemFont(15);
   hText.textColor = C.header;
   hRow.addSpacer();
   const meta = hRow.addText(todayTasks.length + ' today  ' + inboxTasks.length + ' inbox');
-  meta.font = Font.systemFont(10);
+  meta.font = Font.systemFont(12);
   meta.textColor = C.subtext;
 
   w.addSpacer(8);
 
   if (all.length === 0) {
     const empty = w.addText('All clear');
-    empty.font = Font.mediumSystemFont(13);
+    empty.font = Font.mediumSystemFont(15);
     empty.textColor = C.subtext;
+    w.addSpacer();
     return w;
   }
 
@@ -80,26 +82,18 @@ async function buildWidget() {
     row.url = APP_URL;
 
     const dot = row.addText('*');
-    dot.font = Font.boldSystemFont(9);
+    dot.font = Font.boldSystemFont(11);
     dot.textColor = dotCol;
 
     const label = row.addText(task.title);
-    label.font = Font.systemFont(12);
+    label.font = Font.systemFont(14);
     label.textColor = isInbox ? C.subtext : C.text;
     label.lineLimit = 1;
 
-    row.addSpacer();
-
-    const btn = row.addStack();
-    btn.url = 'scriptable:///run?scriptName=' + SCRIPT_NAME + '&widgetParameter=' + encodeURIComponent('done:' + task.id);
-    btn.setPadding(2, 8, 2, 0);
-    const btnText = btn.addText('done');
-    btnText.font = Font.systemFont(10);
-    btnText.textColor = C.check;
-
-    if (i < all.length - 1) w.addSpacer(4);
+    if (i < all.length - 1) w.addSpacer(5);
   }
 
+  w.addSpacer();
   return w;
 }
 
