@@ -1,0 +1,18 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # daily at 2pm UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://xoklkzvgilrpawbilxnc.supabase.co/rest/v1/areas?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhva2xrenZnaWxycGF3YmlseG5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDMyMDMsImV4cCI6MjA4ODg3OTIwM30.MoStn-1gnyT2gdWqoA6F0h-xC5swROoU3dfk3HC444A")
+          echo "Supabase responded: $STATUS"
+          [ "$STATUS" = "200" ] || exit 1
