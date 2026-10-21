@@ -7,6 +7,7 @@ import { ReadingCard } from './components/ReadingCard';
 import { AddTaskModal } from './components/AddTaskModal';
 import { WeekView } from './components/WeekView';
 import { PlansView } from './components/PlansView';
+import { DashboardView } from './components/DashboardView';
 import { SectionHead, Empty } from './components/SectionHead';
 
 export default function App() {
@@ -15,7 +16,7 @@ export default function App() {
   const [areas,     setAreas]     = useState([]);
   const [goals,     setGoals]     = useState([]);
   const [projects,  setProjects]  = useState([]);
-  const [tab,       setTab]       = useState('week');
+  const [tab,       setTab]       = useState('dashboard');
   const [activeDay, setActiveDay] = useState(1); // 0=inbox, 1=today
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState(null);
@@ -126,10 +127,11 @@ export default function App() {
   const plansCount = goals.filter(g => g.status !== 'complete').length + projects.filter(p => p.status !== 'complete').length;
 
   const tabs = [
-    { id: 'week',    label: 'Week',    Icon: Ic.Week,    count: weekTaskCount },
-    { id: 'plans',   label: 'Plans',   Icon: Ic.Plans,   count: plansCount    },
-    { id: 'waiting', label: 'Waiting', Icon: Ic.Waiting, count: waitingTasks.length },
-    { id: 'reading', label: 'Reading', Icon: Ic.Reading, count: unreadCount },
+    { id: 'dashboard', label: 'Home',    Icon: Ic.Home,    count: 0             },
+    { id: 'week',      label: 'Week',    Icon: Ic.Week,    count: weekTaskCount },
+    { id: 'plans',     label: 'Plans',   Icon: Ic.Plans,   count: plansCount    },
+    { id: 'waiting',   label: 'Waiting', Icon: Ic.Waiting, count: waitingTasks.length },
+    { id: 'reading',   label: 'Reading', Icon: Ic.Reading, count: unreadCount },
   ];
 
   function renderContent() {
@@ -145,6 +147,9 @@ export default function App() {
         <p className="text-xs text-stone-400">{error}</p>
         <button onClick={load} className="text-xs text-sage-700 border border-sage-400/40 px-4 py-1.5 rounded-full">Retry</button>
       </div>
+    );
+    if (tab === 'dashboard') return (
+      <DashboardView areas={areas} goals={goals} projects={projects} tasks={tasks} />
     );
     if (tab === 'week') return (
       <WeekView tasks={tasks} cols={cols} areas={areas} projects={projects} onUpdate={updateTask} onDone={markDone}
