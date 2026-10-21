@@ -9,14 +9,14 @@ const APP_URL   = 'https://katherinesdey-netizen.github.io/bedrock/';
 const today = new Date().toISOString().slice(0, 10);
 
 const COLORS = {
-  bg:       new Color('#f5f0eb'),
-  header:   new Color('#292524'),
-  text:     new Color('#44403c'),
-  subtext:  new Color('#a8a29e'),
-  pri1:     new Color('#f87171'),
-  pri2:     new Color('#fbbf24'),
-  pri3:     new Color('#d6d3d1'),
-  inboxDot: new Color('#cbd5e1'),
+  bg:       new Color('f5f0eb'),
+  header:   new Color('292524'),
+  text:     new Color('44403c'),
+  subtext:  new Color('a8a29e'),
+  pri1:     new Color('f87171'),
+  pri2:     new Color('fbbf24'),
+  pri3:     new Color('d6d3d1'),
+  inboxDot: new Color('cbd5e1'),
 };
 
 function headers() {
