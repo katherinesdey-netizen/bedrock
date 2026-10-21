@@ -44,13 +44,13 @@ async function buildWidget() {
 
   const w = new ListWidget();
   w.backgroundColor = C.bg;
-  w.url = APP_URL;
   w.setPadding(14, 16, 14, 12);
 
   // Header
   const hRow = w.addStack();
   hRow.layoutHorizontally();
   hRow.centerAlignContent();
+  hRow.url = APP_URL;
   const hText = hRow.addText('Bedrock');
   hText.font = Font.boldSystemFont(13);
   hText.textColor = C.header;
