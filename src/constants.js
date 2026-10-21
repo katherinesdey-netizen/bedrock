@@ -4,6 +4,7 @@ export const SRC = {
   rise8:      { label: 'Rise8',      pill: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
   imessage:   { label: 'iMessage',   pill: 'bg-green-100 text-green-700',     dot: 'bg-green-500'  },
   manual:     { label: 'Manual',     pill: 'bg-stone-200 text-stone-500',     dot: 'bg-stone-400'  },
+  instinct:   { label: 'Instinct',   pill: 'bg-orange-100 text-orange-700',   dot: 'bg-orange-400' },
 };
 
 export const SRC_OPTIONS = [
