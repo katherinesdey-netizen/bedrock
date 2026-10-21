@@ -1,4 +1,4 @@
-// Bedrock Today — Scriptable widget
+// Bedrock Today - Scriptable widget
 // Install: paste into Scriptable app, add medium home screen widget
 // Tap widget opens the Bedrock web app
 
