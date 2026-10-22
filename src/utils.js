@@ -40,6 +40,7 @@ export function colDate(colId) {
 }
 
 export function taskColId(task, cols) {
+  if (task.status === 'backlog') return 'backlog';
   if (!task.scheduled_date) return 'inbox';
   const today = cols.find(c => c.isToday)?.id;
   if (today && task.scheduled_date < today) return today;

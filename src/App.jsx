@@ -121,8 +121,9 @@ export default function App() {
   }, []);
 
   const waitingTasks  = useMemo(() => tasks.filter(t => t.status === 'waiting'), [tasks]);
+  const backlogTasks  = useMemo(() => tasks.filter(t => t.status === 'backlog'), [tasks]);
   const unreadCount   = useMemo(() => reading.filter(r => !r.read_at).length, [reading]);
-  const weekTaskCount = useMemo(() => tasks.filter(t => t.status !== 'waiting').length, [tasks]);
+  const weekTaskCount = useMemo(() => tasks.filter(t => t.status !== 'waiting' && t.status !== 'backlog').length, [tasks]);
 
   const plansCount = goals.filter(g => g.status !== 'complete').length + projects.filter(p => p.status !== 'complete').length;
 
@@ -131,6 +132,7 @@ export default function App() {
     { id: 'week',      label: 'Week',    Icon: Ic.Week,    count: weekTaskCount },
     { id: 'plans',     label: 'Plans',   Icon: Ic.Plans,   count: plansCount    },
     { id: 'waiting',   label: 'Waiting', Icon: Ic.Waiting, count: waitingTasks.length },
+    { id: 'backlog',   label: 'Backlog', Icon: Ic.Backlog, count: backlogTasks.length },
     { id: 'reading',   label: 'Reading', Icon: Ic.Reading, count: unreadCount },
   ];
 
@@ -164,6 +166,14 @@ export default function App() {
       <div>
         <SectionHead label="Waiting on" count={waitingTasks.length} />
         {waitingTasks.map(t => (
+          <TaskCard key={t.id} task={t} areas={areas} projects={projects} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
+        ))}
+      </div>
+    );
+    if (tab === 'backlog') return backlogTasks.length === 0 ? <Empty tab="backlog" /> : (
+      <div>
+        <SectionHead label="Backlog" count={backlogTasks.length} />
+        {backlogTasks.map(t => (
           <TaskCard key={t.id} task={t} areas={areas} projects={projects} onUpdate={updateTask} onDone={markDone} onReschedule={rescheduleTask} cols={cols} />
         ))}
       </div>

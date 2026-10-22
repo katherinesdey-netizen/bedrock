@@ -74,7 +74,13 @@ export function TaskCard({ task, areas = [], projects = [], onUpdate, onDone, on
                 ⏳ Waiting
               </button>
             )}
-            {task.status === 'waiting' && (
+            {task.status !== 'backlog' && (
+              <button onClick={e => qa({ status: 'backlog' }, e)}
+                className="text-xs font-medium bg-taupe-100 hover:bg-stone-200 hover:text-stone-600 text-stone-400 px-3 py-1.5 rounded-full transition-colors">
+                ↓ Backlog
+              </button>
+            )}
+            {(task.status === 'waiting' || task.status === 'backlog') && (
               <button onClick={e => qa({ status: 'active' }, e)}
                 className="text-xs font-medium bg-taupe-100 hover:bg-sage-100 hover:text-sage-700 text-stone-400 px-3 py-1.5 rounded-full transition-colors">
                 ↑ Active

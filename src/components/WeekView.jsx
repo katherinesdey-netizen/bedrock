@@ -12,7 +12,7 @@ export function WeekView({ tasks, cols, areas, projects, onUpdate, onDone, onRes
 
   const colTasks = useMemo(() => {
     const groups = Object.fromEntries(cols.map(c => [c.id, []]));
-    tasks.filter(t => t.status !== 'waiting').forEach(t => {
+    tasks.filter(t => t.status !== 'waiting' && t.status !== 'backlog').forEach(t => {
       const col = taskColId(t, cols);
       if (groups[col]) groups[col].push(t);
       else groups['inbox'].push(t);
