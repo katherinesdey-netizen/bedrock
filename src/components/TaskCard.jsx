@@ -131,6 +131,10 @@ export function TaskCard({ task, areas = [], projects = [], onUpdate, onDone, on
                 {col.isInbox ? '≡ Inbox' : col.label}
               </button>
             ))}
+            <input type="date"
+              onClick={e => e.stopPropagation()}
+              onChange={e => { if (e.target.value) { onUpdate(task.id, { scheduled_date: e.target.value }); setOpen(false); } }}
+              className="text-[10px] bg-taupe-100 border border-taupe-200 rounded-full px-2 py-1 text-stone-400 focus:outline-none cursor-pointer" />
           </div>
         </div>
       )}
