@@ -82,6 +82,26 @@ export function TaskCard({ task, areas = [], projects = [], onUpdate, onDone, on
             )}
           </div>
 
+          {/* Area assignment */}
+          {areas.length > 0 && (
+            <div className="mb-2.5">
+              <span className="text-[10px] text-stone-400 font-medium uppercase tracking-wide">Area</span>
+              {area ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-1 rounded-full ${areaColors ? areaColors.pill : 'bg-taupe-100 text-stone-600'}`}>{area.name}</span>
+                  <button onClick={e => { e.stopPropagation(); onUpdate(task.id, { area_id: null }); }}
+                    className="text-[10px] text-stone-400 hover:text-red-500 transition-colors">✕</button>
+                </div>
+              ) : (
+                <select defaultValue="" onChange={e => { if (e.target.value) onUpdate(task.id, { area_id: e.target.value }); }}
+                  className="mt-1 w-full bg-taupe-100 border border-taupe-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-600 focus:outline-none cursor-pointer">
+                  <option value="">— assign to area —</option>
+                  {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              )}
+            </div>
+          )}
+
           {/* Project assignment */}
           {(assignedProject || activeProjects.length > 0) && (
             <div className="mb-2.5">
